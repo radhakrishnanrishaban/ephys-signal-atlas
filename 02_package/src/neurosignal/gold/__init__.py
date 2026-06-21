@@ -36,6 +36,14 @@ from .nonlinear import (  # noqa: F401
     _normalize_sessions_tcr,
     _build_joint_features,
 )
+from .streaming import (  # noqa: F401
+    causal_zscore_ewma,
+    causal_zscore_window,
+    causal_smooth_ewma,
+    normalize_sessions_sbp_gold_causal,
+    EwmaNormalizer,
+    stream_session,
+)
 from .drift_plots import (  # noqa: F401
     plot_day0_vs_last_scatter,
     plot_decoded_traces_early_late,
@@ -75,6 +83,12 @@ __all__ = [
     "normalize_sessions_sbp_gold",
     "normalize_sessions_sbp_robust",
     "normalize_sessions_sbp_zscore_only",
+    "causal_zscore_ewma",
+    "causal_zscore_window",
+    "causal_smooth_ewma",
+    "normalize_sessions_sbp_gold_causal",
+    "EwmaNormalizer",
+    "stream_session",
     "sessions_to_pop_rate_norm",
     "quantify_norm_improvement",
     "fit_plot_gain",
