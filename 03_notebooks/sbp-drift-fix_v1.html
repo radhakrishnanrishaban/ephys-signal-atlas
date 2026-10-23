@@ -9196,14 +9196,27 @@ The table below is the numeric companion to the heatmap.</p>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=cd23f2fa">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=9afc8bc0">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="3.-Discussion-and-notebook-takeaways">3. Discussion and notebook takeaways<a class="anchor-link" href="#3.-Discussion-and-notebook-takeaways">¶</a></h2><h3 id="What-this-notebook-establishes">What this notebook establishes<a class="anchor-link" href="#What-this-notebook-establishes">¶</a></h3><p>The dominant failure mode in this LINK subset is not the absence of a decodable signal, but the instability of raw SBP across sessions. <code>Gold r_norm</code> eliminates the negative-transfer regime that makes static raw-SBP decoders actively harmful at cross-day transfer, with a mean off-diagonal Δ R² of <strong>+0.91</strong> across 74 QC-passed sessions.</p>
-<p>The ablation result (Section 2.2) is worth noting explicitly: z-score-only normalization achieves a mean Δ R² of <strong>+0.917</strong>, marginally higher than the full <code>r_norm</code> pipeline (+0.908). Temporal smoothing does not consistently help. The gain lives almost entirely in the per-channel, per-session standardisation step.</p>
+<h2 id="3.-Discussion-and-notebook-takeaways">3. Discussion and notebook takeaways<a class="anchor-link" href="#3.-Discussion-and-notebook-takeaways">¶</a></h2><p><em>Every number in this section is read from the cell outputs above, so it updates when the notebook is re-run.</em></p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell celltag_remove-input" id="cell-id=5cfee907">
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-OutputArea-output" data-mime-type="text/markdown" tabindex="0">
+<h3 id="What-this-notebook-establishes">What this notebook establishes<a class="anchor-link" href="#What-this-notebook-establishes">¶</a></h3><p>The dominant failure mode in this LINK subset is not the absence of a decodable signal, but the instability of raw SBP across sessions. <code>Gold r_norm</code> raises the mean off-diagonal R² from <strong>-0.151</strong> to <strong>+0.055</strong> (Δ R² <strong>+0.206</strong>) across 30 QC-passed sessions spanning 443 days. It reduces the negative-transfer regime rather than eliminating it: with Day 0 as the training session, 21 of 29 later sessions score below zero under raw SBP and 12 under <code>r_norm</code>.</p>
+<p>The ablation (Section 2.2) separates the two steps. z-score-only normalization gives a mean off-diagonal Δ R² of <strong>+0.157</strong>, 76% of the full <code>r_norm</code> pipeline (<strong>+0.206</strong>). Most of the gain comes from the per-channel, per-session standardisation; the 50 ms smoothing adds the remaining +0.049.</p>
+<p>These are point estimates from one run; confidence intervals are not computed yet, so small differences between variants are unresolved.</p>
 <h3 id="Where-it-stops-working">Where it stops working<a class="anchor-link" href="#Where-it-stops-working">¶</a></h3><p>The horizon table (Section 2.3) is the honest limit of this result:</p>
 <table>
 <thead>
@@ -9218,24 +9231,35 @@ The table below is the numeric companion to the heatmap.</p>
 <tr>
 <td><code>r_norm</code></td>
 <td style="text-align:right">0.268</td>
-<td style="text-align:right">0.104</td>
-<td style="text-align:right"><strong>−0.106</strong></td>
+<td style="text-align:right">0.117</td>
+<td style="text-align:right"><strong>-0.021</strong></td>
 </tr>
 <tr>
 <td><code>r_norm_robust_block</code></td>
 <td style="text-align:right">0.267</td>
-<td style="text-align:right">0.107</td>
-<td style="text-align:right"><strong>−0.097</strong></td>
+<td style="text-align:right">0.124</td>
+<td style="text-align:right"><strong>-0.018</strong></td>
 </tr>
 <tr>
 <td>Raw mean (1-channel)</td>
 <td style="text-align:right">0.001</td>
-<td style="text-align:right">−0.001</td>
-<td style="text-align:right">−0.017</td>
+<td style="text-align:right">-0.001</td>
+<td style="text-align:right"><strong>-0.005</strong></td>
 </tr>
 </tbody>
 </table>
-<p>At month-scale separation, <code>r_norm</code> R² goes negative again. This means the short-term drift problem is mostly linear (gain and offset instability, correctable by normalisation), but long-term drift contains a residual component that normalisation cannot remove.</p>
+<p>At month-scale separation, <code>r_norm</code> R² falls to <strong>-0.021</strong>: no better than predicting the mean. The short-term drift problem is mostly linear (gain and offset instability, correctable by normalisation), but long-term drift contains a residual component that normalisation cannot remove.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=0729e951">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <h3 id="Relation-to-learned-alignment-methods">Relation to learned alignment methods<a class="anchor-link" href="#Relation-to-learned-alignment-methods">¶</a></h3><p>Ma et al. (2023) address exactly this residual using a Cycle-GAN: a bidirectional adversarial network trained on unlabelled same-day recordings that maps day-K neural distributions back into day-0 coordinate space (<a href="https://doi.org/10.7554/eLife.84296"><em>eLife</em>, 12, e84296</a>). Their method maintains decoder accuracy at month-scale gaps where <code>r_norm</code> fails.</p>
 <p>The relationship between the two approaches is not competitive — it is structural:</p>
 <ul>
@@ -9244,7 +9268,19 @@ The table below is the numeric companion to the heatmap.</p>
 <li>The gap between them at 1 month+ quantifies the irreducibly nonlinear component of chronic Utah-array drift</li>
 </ul>
 <p>This framing is developed in Post 3.</p>
-<h3 id="Scope-of-this-notebook">Scope of this notebook<a class="anchor-link" href="#Scope-of-this-notebook">¶</a></h3><p>The evidence here covers 74 LINK sessions, SBP features, and linear Ridge-family decoders. The result should be read as a strong unsupervised baseline, not a final alignment system. Later-stage chronic degradation, nonlinear decoders, and combined SBP+TCR representations may shift absolute R² values while leaving the normalization effect intact.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell celltag_remove-input" id="cell-id=52c5f146">
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-OutputArea-output" data-mime-type="text/markdown" tabindex="0">
+<h3 id="Scope-of-this-notebook">Scope of this notebook<a class="anchor-link" href="#Scope-of-this-notebook">¶</a></h3><p>The evidence here covers 30 LINK sessions (20200127 → 20210414, 443 days), SBP features, and linear Ridge-family decoders. The result should be read as a strong unsupervised baseline, not a final alignment system. Later-stage chronic degradation, nonlinear decoders, and combined SBP+TCR representations may shift absolute R² values while leaving the normalization effect intact.</p>
+</div>
 </div>
 </div>
 </div>

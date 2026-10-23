@@ -18,7 +18,22 @@ message="$2"
 [[ "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "version must look like v0.3.0"
 [[ -z "$(git status --porcelain)" ]] || die "working tree not clean; commit to dev first"
 git rev-parse -q --verify "refs/tags/$version" >/dev/null && die "tag $version already exists"
-git ls-tree -r --name-only HEAD | grep -qE '^(internal|docs|lab)/' && die "internal files are tracked; refusing to publish"
+git ls-tree -r --name-only HEAD | grep -qE '^(internal|docs|lab)/|^CLAUDE\.md$' && die "internal files are tracked; refusing to publish"
+
+# D-14: scoreboard rows carry private dev SHAs; the tag lists them, and the newest rows must
+# come from exactly the bench and package code being published.
+board="results/scoreboard.csv"
+[[ -f "$board" ]] || die "$board missing"
+row_commits="$(tail -n +2 "$board" | cut -d, -f2 | awk 'NF && !seen[$0]++' | paste -sd' ' -)"
+newest="$(tail -n 1 "$board" | cut -d, -f2)"
+git cat-file -e "$newest^{commit}" 2>/dev/null || die "scoreboard commit $newest not found"
+git diff --quiet "$newest" HEAD -- bench 02_package/src \
+    || die "bench/ or 02_package/src/ changed since scoreboard commit $newest; rerun python -m bench.run first"
+dev_sha="$(git rev-parse --short HEAD)"
+body="$version: $message
+
+dev $dev_sha
+scoreboard rows from dev commits: $row_commits (bench/ and 02_package/src/ identical to $newest)"
 
 git push -q dev HEAD:main
 # --prune drops a stale public/main so a fresh (empty) public repo starts with no parent.
@@ -30,8 +45,8 @@ if [[ -n "$parent" && "$(git rev-parse "$parent^{tree}")" == "$tree" ]]; then
     die "nothing changed since the last release"
 fi
 
-commit="$(git commit-tree "$tree" ${parent:+-p "$parent"} -m "$version: $message")"
-git tag -a "$version" "$commit" -m "$version: $message"
+commit="$(git commit-tree "$tree" ${parent:+-p "$parent"} -m "$body")"
+git tag -a "$version" "$commit" -m "$body"
 git push -q public "$commit:refs/heads/main" "refs/tags/$version"
 git push -q dev "refs/tags/$version"
 

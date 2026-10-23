@@ -499,6 +499,7 @@ def compute_decoder_r2_per_day(
     sessions_vel: list[np.ndarray],
     mean_correct: bool = False,
     alphas: Optional[np.ndarray] = None,
+    heldout_day0: bool = True,
 ) -> tuple[np.ndarray, Any]:
     """
     Train Ridge on Day 0, score on each day. Returns (r2_day_k, fitted_model).
@@ -506,6 +507,11 @@ def compute_decoder_r2_per_day(
     Uses `_make_xy` to optionally include temporal context and neural→behaviour lag.
     By default, we use a short history window and small lag that are reasonable for
     velocity decoding from LINK SBP.
+
+    The returned model is fit on every Day-0 row, so its Day-0 score would be in-sample.
+    With heldout_day0=True (default), r2_day_k[0] is instead the blocked 5-fold held-out
+    R² from `compute_same_day_r2_blocked` (ERR-01, EXP-001); later days are held out by
+    construction. heldout_day0=False, or mean_correct=True, gives the old in-sample Day-0 value.
 
     If mean_correct=True, correct predictions: y_pred - mean(y_pred) + mean(y_true)
     per test session.
@@ -538,7 +544,63 @@ def compute_decoder_r2_per_day(
         if mean_correct:
             y_pred = y_pred - np.mean(y_pred) + np.mean(y_k)
         r2_day_k[k] = r2_score(y_k, y_pred)
+    if heldout_day0 and not mean_correct:
+        r2_day_k[0] = compute_same_day_r2_blocked(
+            sessions_sbp[0], sessions_vel[0], window_bins=WINDOW_BINS, lag_bins=LAG_BINS, alphas=alpha_grid
+        )["r2_heldout"]
     return r2_day_k, model
+
+
+def compute_same_day_r2_blocked(
+    sbp: np.ndarray,
+    vel: np.ndarray,
+    n_folds: int = 5,
+    offset: int = 0,
+    window_bins: int = 5,
+    lag_bins: int = 3,
+    alphas: Optional[np.ndarray] = None,
+) -> dict:
+    """
+    Held-out same-session R² for the `compute_decoder_r2_per_day` decoder (ERR-01, EXP-001).
+
+    Rows are split into n_folds contiguous test blocks; the grid of block edges starts at
+    `offset` rows and wraps, so a nonzero offset gives a different set of blocks. Training
+    drops window_bins + lag_bins rows on each side of every test row run, so no SBP or
+    velocity bin is read by both a training and a test row (asserted). RidgeCV picks alpha
+    from the training rows only.
+
+    Returns fold R² values, their mean, the pooled R² over all held-out predictions,
+    and the in-sample R² of the same decoder fit on every row (the old Day-0 number).
+    """
+    X, y = _make_xy(sbp, vel, window_bins=window_bins, lag_bins=lag_bins)
+    n = len(y)
+    alpha_grid = np.asarray(alphas if alphas is not None else DECODER_ALPHAS, dtype=float)
+    purge = window_bins + lag_bins
+    rows = np.arange(n)
+    edges = np.linspace(0, n, n_folds + 1).astype(int)
+    shifted = (rows - offset) % n
+
+    fold_r2, y_pred = [], np.empty(n)
+    for lo, hi in zip(edges[:-1], edges[1:]):
+        test = (shifted >= lo) & (shifted < hi)
+        near_test = np.convolve(test, np.ones(2 * purge + 1), mode="same") > 0
+        train = ~near_test
+        # Row i reads bins i .. i + window + lag; test and training bins must not overlap.
+        bins_test = np.unique(rows[test][:, None] + np.arange(purge + 1))
+        bins_train = np.unique(rows[train][:, None] + np.arange(purge + 1))
+        assert np.intersect1d(bins_test, bins_train).size == 0
+        model = RidgeCV(alphas=alpha_grid, cv=5).fit(X[train], y[train])
+        y_pred[test] = model.predict(X[test])
+        fold_r2.append(r2_score(y[test], y_pred[test]))
+
+    in_sample = RidgeCV(alphas=alpha_grid, cv=5).fit(X, y)
+    return {
+        "fold_r2": np.asarray(fold_r2),
+        "r2_heldout": float(np.mean(fold_r2)),
+        "r2_heldout_pooled": float(r2_score(y, y_pred)),
+        "r2_in_sample": float(r2_score(y, in_sample.predict(X))),
+        "n_rows": n,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -764,11 +826,12 @@ def degradation_table(
     r2_day_k: np.ndarray,
     session_dates: list[str],
 ) -> pd.DataFrame:
-    """Return a DataFrame with Day K, Date, and R² (Day 0 → Day K)."""
+    """Return a DataFrame with session index, date, day (from dates, not index) and R² (Day 0 → session)."""
     return pd.DataFrame({
-        "Day K": range(len(r2_day_k)),
+        "Session": range(len(r2_day_k)),
         "Date": session_dates,
-        "R² (Day 0 → Day K)": np.round(r2_day_k, 4),
+        "Day": compute_day_offsets(session_dates).astype(int),
+        "R² (Day 0 → session)": np.round(r2_day_k, 4),
     })
 
 

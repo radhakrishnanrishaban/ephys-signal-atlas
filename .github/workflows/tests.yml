@@ -1,0 +1,20 @@
+# D-11: one job, pytest on push. Synthetic data only; must be green before a public release.
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: 02_package/pyproject.toml
+      - run: pip install -e "02_package[dev]"
+      - run: pytest 02_package/tests -q

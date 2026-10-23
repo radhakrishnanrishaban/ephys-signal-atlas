@@ -43,9 +43,8 @@ def plot_session_channel_heatmap(
     """
     Heatmap: sessions (rows) × channels (cols) showing mean SBP per channel.
 
-    Y-axis is labeled by Day K (0..N-1). `session_dates` is accepted for
-    consistency with other plot helpers and for future annotation, but the
-    default y tick labels are Day indices.
+    Session ticks are labelled with days since the first session, computed from
+    `session_dates` (never the session index, ERR-06).
 
     Parameters
     ----------
@@ -59,8 +58,8 @@ def plot_session_channel_heatmap(
         If provided, clip color scale to these percentiles (low, high) computed
         over all finite matrix entries. Use None to disable.
     days_on_x:
-        If False (default), x-axis is Channel and y-axis is Day K.
-        If True, x-axis is Day K and y-axis is Channel (transposed view).
+        If False (default), x-axis is Channel and y-axis is Session.
+        If True, x-axis is Session and y-axis is Channel (transposed view).
     ax:
         Optional matplotlib Axes to plot into.
     """
@@ -75,6 +74,7 @@ def plot_session_channel_heatmap(
 
     # Orientation: (sessions, channels) or transposed (channels, sessions)
     M_plot = M.T if days_on_x else M
+    day_of = compute_day_offsets(list(session_dates)).astype(int)
 
     vmin = vmax = None
     finite = np.isfinite(M_plot)
@@ -103,7 +103,7 @@ def plot_session_channel_heatmap(
     )
 
     if days_on_x:
-        ax.set_xlabel("Day K", fontsize=AXIS_LABEL_FONTSIZE)
+        ax.set_xlabel("Session (labelled by day)", fontsize=AXIS_LABEL_FONTSIZE)
         ax.set_ylabel("Channel", fontsize=AXIS_LABEL_FONTSIZE)
         ax.set_title("Mean SBP (Channel×Session)", fontsize=TITLE_FONTSIZE)
 
@@ -116,7 +116,7 @@ def plot_session_channel_heatmap(
             step = 5
         xticks = np.arange(0, N_days, step)
         ax.set_xticks(xticks)
-        ax.set_xticklabels([f"Day {k}" for k in xticks], rotation=0)
+        ax.set_xticklabels([str(day_of[k]) for k in xticks], rotation=0)
 
         # Sparse y ticks for channels
         n_ch = M_plot.shape[0]
@@ -126,7 +126,7 @@ def plot_session_channel_heatmap(
         ax.set_yticklabels([str(int(c)) for c in yticks])
     else:
         ax.set_xlabel("Channel", fontsize=AXIS_LABEL_FONTSIZE)
-        ax.set_ylabel("Day K", fontsize=AXIS_LABEL_FONTSIZE)
+        ax.set_ylabel("Session (labelled by day)", fontsize=AXIS_LABEL_FONTSIZE)
         ax.set_title("Mean SBP per channel (Session×Channel)", fontsize=TITLE_FONTSIZE)
 
         # Sparse y ticks to keep labels readable
@@ -138,7 +138,7 @@ def plot_session_channel_heatmap(
             step = 5
         yticks = np.arange(0, N_days, step)
         ax.set_yticks(yticks)
-        ax.set_yticklabels([f"Day {k}" for k in yticks])
+        ax.set_yticklabels([f"day {day_of[k]}" for k in yticks])
 
     cbar = fig.colorbar(im, ax=ax, fraction=0.03, pad=0.02)
     cbar.set_label("Mean SBP (20 ms bins)")
@@ -336,6 +336,7 @@ def plot_per_channel_drift_small_multiples(
 ) -> Any:
     """
     Small multiples: each panel is Day 0 (x) vs a later session (y) at increasing gaps.
+    `day_indices` are session indices; panel labels give days from session dates.
     Points scatter further from the diagonal as the gap grows. Coral = decay, teal = increase.
     If out_path is set, saves figure there. Returns the figure.
     """
@@ -359,11 +360,12 @@ def plot_per_channel_drift_small_multiples(
         axs = np.array([axs])
     axs = axs.ravel()
     mean_0 = mean_per_session[0]
+    day_of = compute_day_offsets(list(session_dates)).astype(int)
     for i, k in enumerate(day_indices):
         _scatter_day0_vs_k(
             mean_0,
             mean_per_session[k],
-            f"Day {k}",
+            f"Day {day_of[k]}",
             session_dates[k],
             axs[i],
         )
@@ -384,10 +386,10 @@ def plot_day0_vs_last_scatter(
 ) -> Any:
     """
     Per-channel mean SBP: Day 0 vs last. Each point = one channel.
-    Legend uses dynamic last day (Day N-1), not hardcoded Day 3.
+    The last session is labelled by its day from session dates, not its index N-1.
     Returns the figure.
     """
-    last_label = f"Day {N-1}"
+    last_label = f"Day {int(compute_day_offsets([session_dates[0], session_dates[-1]])[-1])}"
     diff = mean_last - mean_0
     tol = 0.1 * (float(np.nanmax(np.abs(diff))) if np.any(np.isfinite(diff)) else 1.0)
     mask_below = diff < -tol
@@ -437,7 +439,9 @@ def plot_decoder_degradation(
     ylim: Optional[tuple[float, float]] = None,
 ) -> Any:
     """
-    Bar chart: R² per day (trained on Day 0). Adaptive ylim when R² are near zero.
+    Bar chart: R² per session (trained on Day 0), one bar per session, ticks labelled
+    with days from session dates. r2_day_k[0] should be the held-out Day-0 score
+    (`compute_decoder_r2_per_day` default). Adaptive ylim when R² are near zero.
     If out_path is set, saves figure there. Returns the figure.
     """
     r2_day_k = np.asarray(r2_day_k, dtype=np.float64)
@@ -452,13 +456,14 @@ def plot_decoder_degradation(
     else:
         # Keep the axis readable for longer session series while always showing Day 0 and the last day.
         tick_positions = np.unique(np.linspace(0, N - 1, num=6, dtype=int))
-    x_labels = [f"Day {k}" for k in tick_positions]
+    day_of = compute_day_offsets(list(session_dates)).astype(int)
     ax.bar(range(N), r2_plot, color=["steelblue"] + ["coral"] * (N - 1), alpha=0.8)
     ax.set_xticks(tick_positions)
-    ax.set_xticklabels(x_labels)
+    ax.set_xticklabels([str(day_of[k]) for k in tick_positions])
+    ax.set_xlabel(f"Test session (days since {session_dates[0]})", fontsize=AXIS_LABEL_FONTSIZE)
     ax.set_ylabel("R²", fontsize=AXIS_LABEL_FONTSIZE)
-    ax.set_title("Decoder degradation on Day K (trained on Day 0 only)", fontsize=TITLE_FONTSIZE)
-    ax.axhline(r2_plot[0], color="gray", linestyle="--", alpha=0.7, label="Day 0 baseline")
+    ax.set_title("Decoder trained on Day 0, frozen", fontsize=TITLE_FONTSIZE)
+    ax.axhline(r2_plot[0], color="gray", linestyle="--", alpha=0.7, label="Day 0, held out")
     ax.legend(fontsize=LEGEND_FONTSIZE, framealpha=0.75)
 
     if ylim is not None:
@@ -500,7 +505,8 @@ def plot_decoder_r2_boxplot_by_gap(
         Sequence of YYYYMMDD strings, one per session in the same order as r2_day_k.
     gap_bins :
         Optional sequence of (lo_days, hi_days, label). Default:
-        (0, 7, "0–7 d"), (8, 30, "8–30 d"), (31, 365, ">30 d").
+        (1, 7, "1–7 d"), (8, 30, "8–30 d"), (31, inf, ">30 d"). Day 0 itself (the
+        training session) is never in a bin.
     ylim :
         Optional explicit y-axis limits (ymin, ymax).
     ax :
@@ -517,9 +523,9 @@ def plot_decoder_r2_boxplot_by_gap(
 
     if gap_bins is None:
         gap_bins = [
-            (0, 7, "0–7 d"),
+            (1, 7, "1–7 d"),
             (8, 30, "8–30 d"),
-            (31, 365, ">30 d"),
+            (31, np.inf, ">30 d"),
         ]
 
     data_per_bin: list[np.ndarray] = []

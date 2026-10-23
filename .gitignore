@@ -33,3 +33,6 @@ draft/
 wiki-ephys/
 # Internal R&D docs (decisions, facts, charter) — private repo ephys-signal-internal
 internal/
+
+# Agent rules (private; imports internal/CLAUDE.md)
+CLAUDE.md
