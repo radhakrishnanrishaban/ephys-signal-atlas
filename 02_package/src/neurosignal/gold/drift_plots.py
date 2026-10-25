@@ -10,13 +10,14 @@ from typing import Any, List, Optional, Sequence, Union
 import numpy as np
 from matplotlib import pyplot as plt
 
+from .decoder import SPEC
 from .drift import (
     AXIS_LABEL_FONTSIZE,
     TITLE_FONTSIZE,
     LEGEND_FONTSIZE,
     DEFAULT_ROBUST_BLOCK_SIZE_BINS,
     GOLD_DECODER_ALPHAS,
-    _make_xy,
+    make_xy,
     align_sessions_sbp_procrustes,
     apply_plot_gain,
     compute_day_offsets,
@@ -598,14 +599,14 @@ def plot_pairwise_r2_heatmap(
     vmin/vmax: shared scale for side-by-side plots (e.g. -0.4, 1.0).
     """
     N = R.shape[0]
-    labels = [f"Day {k}" for k in range(N)]
     if N <= 8:
         tick_positions = np.arange(N)
     else:
         # Keep both axes readable for longer session series while always
         # showing Day 0 and the last day.
         tick_positions = np.unique(np.linspace(0, N - 1, num=6, dtype=int))
-    tick_labels = [f"Day {k}" for k in tick_positions]
+    day_of = compute_day_offsets(list(session_dates)).astype(int)  # days from dates, not index (ERR-06)
+    tick_labels = [f"day {day_of[k]}" for k in tick_positions]
     if ax is None:
         fig, ax = plt.subplots(figsize=(8, 6))
     else:
@@ -784,8 +785,8 @@ def plot_decoded_traces_early_late(
     win: Optional[tuple[int, int]] = None,
     out_path: Optional[Union[Path, str]] = None,
     suptitle: Optional[str] = None,
-    window_bins: int = 5,
-    lag_bins: int = 3,
+    window_bins: int = SPEC.window_bins,
+    lag_bins: int = SPEC.lag_bins,
     apply_gain: bool = True,
 ) -> Any:
     """
@@ -797,13 +798,13 @@ def plot_decoded_traces_early_late(
     now applies an optional visualization-only gain so the orange trace amplitude
     roughly matches the blue trace while leaving R² computations unchanged.
     """
-    X0, y0 = _make_xy(
+    X0, y0 = make_xy(
         sessions_sbp[0],
         sessions_vel[0],
         window_bins=window_bins,
         lag_bins=lag_bins,
     )
-    X_last, y_last = _make_xy(
+    X_last, y_last = make_xy(
         sessions_sbp[-1],
         sessions_vel[-1],
         window_bins=window_bins,
@@ -849,7 +850,8 @@ def plot_decoded_traces_early_late(
     ax_late.plot(t, y_late_pred_plot, color="coral", alpha=0.8, label="Predicted")
     ax_late.set_xlabel("Time bin", fontsize=AXIS_LABEL_FONTSIZE)
     ax_late.set_ylabel("Velocity", fontsize=AXIS_LABEL_FONTSIZE)
-    ax_late.set_title(f"Day {N-1} (late) — {session_dates[-1]}", fontsize=TITLE_FONTSIZE)
+    late_day = int(compute_day_offsets([session_dates[0], session_dates[-1]])[-1])  # from dates, not index
+    ax_late.set_title(f"Day {late_day} (late) — {session_dates[-1]}", fontsize=TITLE_FONTSIZE)
     ax_late.legend(fontsize=LEGEND_FONTSIZE, framealpha=0.75)
 
     fig.suptitle(
@@ -1134,8 +1136,8 @@ def plot_decoded_traces_raw_vs_gold_early_late(
     sbp_gold: List[np.ndarray],
     sessions_vel: List[np.ndarray],
     session_dates: List[str],
-    window_bins: int = 5,
-    lag_bins: int = 3,
+    window_bins: int = SPEC.window_bins,
+    lag_bins: int = SPEC.lag_bins,
     window_len: int = 500,
     apply_gain: bool = True,
     out_path: Optional[Union[Path, str]] = None,
@@ -1152,25 +1154,25 @@ def plot_decoded_traces_raw_vs_gold_early_late(
     Day 0 data for each feature set so amplitudes are comparable.
     """
     # Build design matrices for Day 0 and last day for both feature sets.
-    X0_raw, y0 = _make_xy(
+    X0_raw, y0 = make_xy(
         sbp_raw[0],
         sessions_vel[0],
         window_bins=window_bins,
         lag_bins=lag_bins,
     )
-    X_last_raw, y_last = _make_xy(
+    X_last_raw, y_last = make_xy(
         sbp_raw[-1],
         sessions_vel[-1],
         window_bins=window_bins,
         lag_bins=lag_bins,
     )
-    X0_gold, _ = _make_xy(
+    X0_gold, _ = make_xy(
         sbp_gold[0],
         sessions_vel[0],
         window_bins=window_bins,
         lag_bins=lag_bins,
     )
-    X_last_gold, _ = _make_xy(
+    X_last_gold, _ = make_xy(
         sbp_gold[-1],
         sessions_vel[-1],
         window_bins=window_bins,
@@ -1269,8 +1271,8 @@ def plot_decoded_traces_feature_sets_early_late(
     sessions_vel: List[np.ndarray],
     session_dates: List[str],
     feature_labels: Optional[dict[str, str]] = None,
-    window_bins: int = 5,
-    lag_bins: int = 3,
+    window_bins: int = SPEC.window_bins,
+    lag_bins: int = SPEC.lag_bins,
     window_len: int = 500,
     apply_gain: bool = True,
     out_path: Optional[Union[Path, str]] = None,
@@ -1293,13 +1295,13 @@ def plot_decoded_traces_feature_sets_early_late(
         raise ValueError("Need at least one shared feature key in models_by_feature and sessions_by_feature")
 
     first_sessions = feature_items[0][2]
-    _, y0 = _make_xy(
+    _, y0 = make_xy(
         first_sessions[0],
         sessions_vel[0],
         window_bins=window_bins,
         lag_bins=lag_bins,
     )
-    _, y_last = _make_xy(
+    _, y_last = make_xy(
         first_sessions[-1],
         sessions_vel[-1],
         window_bins=window_bins,
@@ -1320,13 +1322,13 @@ def plot_decoded_traces_feature_sets_early_late(
         axes = np.asarray(axes).reshape(2, 1)
 
     for col, (feat, model, sessions_feat) in enumerate(feature_items):
-        X0, _ = _make_xy(
+        X0, _ = make_xy(
             sessions_feat[0],
             sessions_vel[0],
             window_bins=window_bins,
             lag_bins=lag_bins,
         )
-        X_last, _ = _make_xy(
+        X_last, _ = make_xy(
             sessions_feat[-1],
             sessions_vel[-1],
             window_bins=window_bins,

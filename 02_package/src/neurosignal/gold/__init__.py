@@ -3,6 +3,7 @@
 from .spike_sort import sort_spikes  # noqa: F401
 from .features import compute_spike_features  # noqa: F401
 from .quality import compute_quality_metrics  # noqa: F401
+from .decoder import SPEC, DecoderSpec, fit_decoder, make_xy, session_design  # noqa: F401
 from .drift import (  # noqa: F401
     AXIS_LABEL_FONTSIZE,
     TITLE_FONTSIZE,
@@ -26,10 +27,15 @@ from .drift import (  # noqa: F401
     apply_plot_gain,
 )
 from .nonlinear import (  # noqa: F401
+    MLP_SPEC,
+    PooledDecoders,
+    fit_mlp,
     fit_pca_joint,
-    train_mlp_cross_session,
-    eval_mlp_per_day,
-    mlp_comparison_row,
+    fit_pooled_decoders,
+    joint_features,
+    pooled_training_rows,
+    score_pooled,
+    score_sessions,
     plot_mlp_r2_timeline,
     plot_mlp_waterfall,
     plot_mlp_error_heatmap,
@@ -112,10 +118,15 @@ __all__ = [
     "plot_session_channel_heatmap",
     "plot_signal_degradation_mean_sem",
     "plot_signal_degradation_overlaid",
+    "MLP_SPEC",
+    "PooledDecoders",
+    "fit_mlp",
     "fit_pca_joint",
-    "train_mlp_cross_session",
-    "eval_mlp_per_day",
-    "mlp_comparison_row",
+    "fit_pooled_decoders",
+    "joint_features",
+    "pooled_training_rows",
+    "score_pooled",
+    "score_sessions",
     "plot_mlp_r2_timeline",
     "plot_mlp_waterfall",
     "plot_mlp_error_heatmap",

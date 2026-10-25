@@ -2,7 +2,7 @@
 Which rows train and which rows test, for every bench score.
 
 Kept free of data loading so the leakage test can check the plan on synthetic
-session lengths. Row i of a session is the _make_xy row at base bin t = window + i
+session lengths. Row i of a session is the make_xy row at base bin t = window + i
 (after the warm-up trim); it reads SBP bins t-window..t and velocity bin t+lag.
 """
 
@@ -13,7 +13,7 @@ from typing import Dict, List
 
 import numpy as np
 
-from bench.spec import DecoderSpec
+from neurosignal.gold.decoder import DecoderSpec, blocked_folds, grid_offset, n_rows  # noqa: F401
 
 
 @dataclass(frozen=True)
@@ -26,39 +26,11 @@ class ScorePlan:
     test_rows: np.ndarray    # row indices in the test session
 
 
-def n_rows(n_bins: int, spec: DecoderSpec) -> int:
-    """Rows _make_xy builds from a session of n_bins (SBP and velocity of equal length)."""
-    return max(0, n_bins - spec.window_bins - spec.lag_bins)
-
-
 def row_bins(rows: np.ndarray, spec: DecoderSpec) -> np.ndarray:
     """Every SBP or velocity bin the given rows read, as a sorted unique array."""
     t = np.asarray(rows) + spec.window_bins
     spans = t[:, None] + np.arange(-spec.window_bins, spec.lag_bins + 1)[None, :]
     return np.unique(spans)
-
-
-def grid_offset(rows: int, seed: int, spec: DecoderSpec) -> int:
-    """Rows the fold grid is shifted by for this seed (D-13): one draw u ~ U[0, 1) per seed."""
-    u = np.random.default_rng(seed).random()
-    return int(u * rows / spec.same_day_folds)
-
-
-def blocked_folds(rows: int, spec: DecoderSpec, offset: int = 0) -> List[tuple]:
-    """
-    Contiguous test blocks on a grid shifted by `offset` rows; the block crossing the end
-    wraps to the start. Training drops every row within purge_rows of a test row, so no bin is shared.
-    """
-    edges = np.linspace(0, rows, spec.same_day_folds + 1).astype(int)
-    all_rows = np.arange(rows)
-    shifted = (all_rows - offset) % rows if rows else all_rows
-    window = np.ones(2 * spec.purge_rows + 1)
-    folds = []
-    for lo, hi in zip(edges[:-1], edges[1:]):
-        is_test = (shifted >= lo) & (shifted < hi)
-        near_test = np.convolve(is_test, window, mode="same") > 0
-        folds.append((all_rows[~near_test], all_rows[is_test]))
-    return folds
 
 
 def plan_scores(splits: Dict, session_bins: Dict[str, int], spec: DecoderSpec, seed: int = 0) -> List[ScorePlan]:

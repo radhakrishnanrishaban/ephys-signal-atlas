@@ -5,6 +5,10 @@ EXP-001 (EDA-14): score the discovery notebook's Day-0 decoder on held-out rows 
 
 Loads every LINK session as `sbp-drift-discovery_v1` does, then scores session 0 with
 `compute_same_day_r2_blocked`: 5 contiguous blocks, offset 0 plus seeds 0, 1, 2.
+
+The EXP-001 numbers come from `dev 789eed9` (RidgeCV, alphas 1e-2…1e2, no warm-up trim).
+From D-15 on, the decoder is the package spec, so running this at a later commit scores
+the unified spec instead; check out 789eed9 to reproduce EXP-001 exactly.
 """
 
 from __future__ import annotations
@@ -15,7 +19,8 @@ from pathlib import Path
 
 import numpy as np
 
-from neurosignal.gold.drift import _make_xy, compute_decoder_r2_per_day, compute_same_day_r2_blocked
+from neurosignal.gold.decoder import SPEC, session_design
+from neurosignal.gold.drift import compute_decoder_r2_per_day, compute_same_day_r2_blocked
 from neurosignal.io.loaders import list_link_nwb_paths, load_link_sessions, session_date_from_path
 
 REPO = Path(__file__).resolve().parents[1]
@@ -33,14 +38,14 @@ def main() -> None:
     r2_day_k, _ = compute_decoder_r2_per_day(sbp, vel)
     print(f"notebook path: Day 0 in-sample R² {r2_day_k[0]:.4f} · last session {dates[-1]} R² {r2_day_k[-1]:.4f}")
 
-    n_rows = len(_make_xy(sbp[0], vel[0], window_bins=5, lag_bins=3)[1])
+    n_rows = len(session_design(sbp[0], vel[0], SPEC)[1])
     grids = {"offset 0": 0}
     for seed in SEEDS:
         grids[f"seed {seed}"] = int(np.random.default_rng(seed).integers(0, n_rows // N_FOLDS))
 
     heldout = []
     for name, offset in grids.items():
-        r = compute_same_day_r2_blocked(sbp[0], vel[0], n_folds=N_FOLDS, offset=offset)
+        r = compute_same_day_r2_blocked(sbp[0], vel[0], SPEC, offset=offset)
         heldout.append(r["r2_heldout"])
         folds = " ".join(f"{v:.4f}" for v in r["fold_r2"])
         print(

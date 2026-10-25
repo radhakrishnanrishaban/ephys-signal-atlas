@@ -101,6 +101,26 @@ def load_link_sbp_tcr_velocity(nwb_path: Union[Path, str]) -> tuple:
     return sbp, tcr, vel
 
 
+LINK_KINEMATICS = ("index_position", "mrs_position", "index_velocity", "mrs_velocity")
+
+
+def load_link_trial_session(nwb_path: Union[Path, str]) -> dict:
+    """
+    SBP, the four LINK kinematic series and the bin where each trial starts, for the
+    trial-based split of the LINK paper (Temmar et al. 2025). Returns
+    {"sbp": (T, 96), "kin": (T, 4) in LINK_KINEMATICS order, "trial_start_bins": (n_trials,)}.
+    """
+    with NWBHDF5IO(str(nwb_path), mode="r") as io:
+        nwb = io.read()
+        sbp_ts = nwb.analysis["SpikingBandPower"]
+        sbp = np.asarray(sbp_ts.data[:])
+        kin = np.column_stack([np.asarray(nwb.analysis[k].data[:]).ravel() for k in LINK_KINEMATICS])
+        stamps = np.asarray(sbp_ts.timestamps[:])
+        starts = np.asarray(nwb.trials["start_time"][:])
+    trial_start_bins = np.searchsorted(stamps, starts - 1e-6)
+    return {"sbp": sbp, "kin": kin, "trial_start_bins": trial_start_bins}
+
+
 def load_link_sessions(
     paths: list,
     include_tcr: bool = False,

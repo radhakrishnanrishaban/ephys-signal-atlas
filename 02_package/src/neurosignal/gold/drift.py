@@ -20,13 +20,14 @@ from sklearn.linear_model import LinearRegression, RidgeCV
 from sklearn.metrics import r2_score
 from sklearn.model_selection import cross_val_score
 
+from .decoder import SPEC, DecoderSpec, blocked_folds, fit_decoder, make_xy, same_day_r2, session_design  # noqa: F401
+
 # Figure style constants — enforced across all package plots
 AXIS_LABEL_FONTSIZE = 16   # ax.set_xlabel / ax.set_ylabel
 TITLE_FONTSIZE = 18        # ax.set_title / fig.suptitle
 LEGEND_FONTSIZE = 11       # ax.legend fontsize
 
-# Default alpha grid for RidgeCV in decoders (used for raw / baseline models).
-# Narrow range avoids extreme over‑shrinkage but still spans several orders.
+# Alpha grid for the QC screen only (_compute_intra_r2_cv); every evaluation uses decoder.SPEC (D-15).
 DECODER_ALPHAS = np.logspace(-2, 2, 10)
 
 # Slightly softer grid for Gold (r_norm) decoders, biased toward smaller alphas
@@ -34,72 +35,6 @@ DECODER_ALPHAS = np.logspace(-2, 2, 10)
 GOLD_DECODER_ALPHAS = np.logspace(-3, 1, 10)
 ROBUST_MAD_SCALE = 1.4826
 DEFAULT_ROBUST_BLOCK_SIZE_BINS = 250
-
-
-# ---------------------------------------------------------------------------
-# §2.3 (Methods – Evaluation): windowed, lagged design matrix for decoders
-# ---------------------------------------------------------------------------
-
-def _make_xy(
-    sbp: np.ndarray,
-    vel: np.ndarray,
-    window_bins: int = 0,
-    lag_bins: int = 0,
-) -> Tuple[np.ndarray, np.ndarray]:
-    """
-    Build decoder X (all SBP channels, with optional temporal window) and y (velocity).
-
-    By default (window_bins=0, lag_bins=0) this matches the original behaviour:
-    predict v(t) from SBP(t) only, aligned by min length.
-
-    If window_bins > 0, X(t) stacks SBP over the last `window_bins` bins:
-        X(t) = [SBP(t), SBP(t-1), ..., SBP(t-window_bins)]
-    flattened over channels with "current first" ordering.
-
-    If lag_bins > 0, predict v(t + lag_bins) from SBP up to time t.
-    """
-    if window_bins < 0:
-        raise ValueError(f"window_bins must be >= 0, got {window_bins}")
-    if lag_bins < 0:
-        raise ValueError(f"lag_bins must be >= 0, got {lag_bins}")
-
-    X_raw = np.nan_to_num(
-        np.asarray(sbp, dtype=np.float64),
-        nan=0.0,
-        posinf=0.0,
-        neginf=0.0,
-    )
-    y_full = np.ravel(np.asarray(vel, dtype=np.float64))
-
-    T_sbp, n_ch = X_raw.shape
-    T_y = len(y_full)
-
-    # Valid base time indices t satisfy:
-    #   t >= window_bins         (enough history)
-    #   t < T_sbp                (within SBP length)
-    #   t + lag_bins < T_y       (target within velocity length)
-    max_t = min(T_sbp - 1, T_y - 1 - lag_bins)
-    if max_t < window_bins:
-        X_empty = np.empty((0, n_ch * (window_bins + 1 if window_bins > 0 else 1)))
-        y_empty = np.empty((0,), dtype=np.float64)
-        return X_empty, y_empty
-
-    t_indices = np.arange(window_bins, max_t + 1, dtype=int)
-
-    if window_bins == 0:
-        X = X_raw[t_indices]
-    else:
-        n_samples = len(t_indices)
-        n_time = window_bins + 1
-        X = np.empty((n_samples, n_ch * n_time), dtype=np.float64)
-        for i, t in enumerate(t_indices):
-            # Stack [SBP(t), SBP(t-1), ..., SBP(t-window_bins)] with current first.
-            window = X_raw[t - window_bins : t + 1][::-1]
-            X[i] = window.reshape(-1)
-
-    y = y_full[t_indices + lag_bins]
-
-    return X, y
 
 
 # ---------------------------------------------------------------------------
@@ -324,7 +259,7 @@ def _compute_intra_r2_cv(
     """
     Per-session within-day decoder R² estimated by k-fold cross-validation.
 
-    For each session k, builds (X, y) via _make_xy and runs cross_val_score
+    For each session k, builds (X, y) via make_xy and runs cross_val_score
     with a nested RidgeCV estimator (inner fold selects alpha, outer fold
     estimates generalisation R²). Returns a list of length N of mean CV R²
     values (one per session).
@@ -336,7 +271,7 @@ def _compute_intra_r2_cv(
     """
     out: List[float] = []
     for sbp, vel in zip(sessions_sbp, sessions_vel):
-        X, y = _make_xy(sbp, vel)
+        X, y = make_xy(sbp, vel)
         if X.shape[0] < cv * 2:
             out.append(float("nan"))
             continue
@@ -498,108 +433,63 @@ def compute_decoder_r2_per_day(
     sessions_sbp: list[np.ndarray],
     sessions_vel: list[np.ndarray],
     mean_correct: bool = False,
-    alphas: Optional[np.ndarray] = None,
+    spec: DecoderSpec = SPEC,
     heldout_day0: bool = True,
 ) -> tuple[np.ndarray, Any]:
     """
-    Train Ridge on Day 0, score on each day. Returns (r2_day_k, fitted_model).
+    Train the spec's decoder on Day 0, score every session. Returns (r2_day_k, fitted_model).
 
-    Uses `_make_xy` to optionally include temporal context and neural→behaviour lag.
-    By default, we use a short history window and small lag that are reasonable for
-    velocity decoding from LINK SBP.
-
-    The returned model is fit on every Day-0 row, so its Day-0 score would be in-sample.
-    With heldout_day0=True (default), r2_day_k[0] is instead the blocked 5-fold held-out
-    R² from `compute_same_day_r2_blocked` (ERR-01, EXP-001); later days are held out by
-    construction. heldout_day0=False, or mean_correct=True, gives the old in-sample Day-0 value.
+    Every session goes through `session_design` (warm-up trimmed, window and lag from the spec,
+    D-15). The returned model is fit on every Day-0 row, so its Day-0 score would be in-sample;
+    with heldout_day0=True (default) r2_day_k[0] is the mean held-out R² of the spec's blocked
+    folds instead (ERR-01). Later days are held out by construction. heldout_day0=False, or
+    mean_correct=True, gives the in-sample Day-0 value.
 
     If mean_correct=True, correct predictions: y_pred - mean(y_pred) + mean(y_true)
     per test session.
     """
-    N = len(sessions_sbp)
-
-    # Temporal context: number of past SBP bins to include in X.
-    WINDOW_BINS = 5
-    # Neural → behaviour lag in bins (predict v(t + lag) from SBP up to time t).
-    LAG_BINS = 3
-
-    X0, y0 = _make_xy(
-        sessions_sbp[0],
-        sessions_vel[0],
-        window_bins=WINDOW_BINS,
-        lag_bins=LAG_BINS,
-    )
-    alpha_grid = np.asarray(alphas if alphas is not None else DECODER_ALPHAS, dtype=float)
-    model = RidgeCV(alphas=alpha_grid, cv=5)
-    model.fit(X0, y0)
-    r2_day_k = np.zeros(N)
-    for k in range(N):
-        X_k, y_k = _make_xy(
-            sessions_sbp[k],
-            sessions_vel[k],
-            window_bins=WINDOW_BINS,
-            lag_bins=LAG_BINS,
-        )
+    designs = [session_design(f, v, spec)[:2] for f, v in zip(sessions_sbp, sessions_vel)]
+    X0, y0 = designs[0]
+    model = fit_decoder(X0, y0, spec)
+    r2_day_k = np.zeros(len(designs))
+    for k, (X_k, y_k) in enumerate(designs):
         y_pred = model.predict(X_k)
         if mean_correct:
             y_pred = y_pred - np.mean(y_pred) + np.mean(y_k)
         r2_day_k[k] = r2_score(y_k, y_pred)
     if heldout_day0 and not mean_correct:
-        r2_day_k[0] = compute_same_day_r2_blocked(
-            sessions_sbp[0], sessions_vel[0], window_bins=WINDOW_BINS, lag_bins=LAG_BINS, alphas=alpha_grid
-        )["r2_heldout"]
+        r2_day_k[0] = float(same_day_r2(X0, y0, spec).mean())
     return r2_day_k, model
 
 
 def compute_same_day_r2_blocked(
     sbp: np.ndarray,
     vel: np.ndarray,
-    n_folds: int = 5,
+    spec: DecoderSpec = SPEC,
     offset: int = 0,
-    window_bins: int = 5,
-    lag_bins: int = 3,
-    alphas: Optional[np.ndarray] = None,
 ) -> dict:
     """
-    Held-out same-session R² for the `compute_decoder_r2_per_day` decoder (ERR-01, EXP-001).
+    Held-out same-session R² for the spec's decoder (ERR-01, EXP-001, D-15).
 
-    Rows are split into n_folds contiguous test blocks; the grid of block edges starts at
-    `offset` rows and wraps, so a nonzero offset gives a different set of blocks. Training
-    drops window_bins + lag_bins rows on each side of every test row run, so no SBP or
-    velocity bin is read by both a training and a test row (asserted). RidgeCV picks alpha
-    from the training rows only.
+    Rows come from `session_design` (warm-up trimmed); the spec's blocked folds start at
+    `offset` rows and wrap, and training drops every row within window + lag of a test row,
+    so no SBP or velocity bin is read by both. Alpha is chosen on training rows only.
 
     Returns fold R² values, their mean, the pooled R² over all held-out predictions,
-    and the in-sample R² of the same decoder fit on every row (the old Day-0 number).
+    and the in-sample R² of the same decoder fit on every row.
     """
-    X, y = _make_xy(sbp, vel, window_bins=window_bins, lag_bins=lag_bins)
-    n = len(y)
-    alpha_grid = np.asarray(alphas if alphas is not None else DECODER_ALPHAS, dtype=float)
-    purge = window_bins + lag_bins
-    rows = np.arange(n)
-    edges = np.linspace(0, n, n_folds + 1).astype(int)
-    shifted = (rows - offset) % n
-
-    fold_r2, y_pred = [], np.empty(n)
-    for lo, hi in zip(edges[:-1], edges[1:]):
-        test = (shifted >= lo) & (shifted < hi)
-        near_test = np.convolve(test, np.ones(2 * purge + 1), mode="same") > 0
-        train = ~near_test
-        # Row i reads bins i .. i + window + lag; test and training bins must not overlap.
-        bins_test = np.unique(rows[test][:, None] + np.arange(purge + 1))
-        bins_train = np.unique(rows[train][:, None] + np.arange(purge + 1))
-        assert np.intersect1d(bins_test, bins_train).size == 0
-        model = RidgeCV(alphas=alpha_grid, cv=5).fit(X[train], y[train])
-        y_pred[test] = model.predict(X[test])
+    X, y, _ = session_design(sbp, vel, spec)
+    y_pred = np.empty(len(y))
+    fold_r2 = []
+    for train, test in blocked_folds(len(y), spec, offset):
+        y_pred[test] = fit_decoder(X[train], y[train], spec).predict(X[test])
         fold_r2.append(r2_score(y[test], y_pred[test]))
-
-    in_sample = RidgeCV(alphas=alpha_grid, cv=5).fit(X, y)
     return {
         "fold_r2": np.asarray(fold_r2),
         "r2_heldout": float(np.mean(fold_r2)),
         "r2_heldout_pooled": float(r2_score(y, y_pred)),
-        "r2_in_sample": float(r2_score(y, in_sample.predict(X))),
-        "n_rows": n,
+        "r2_in_sample": float(r2_score(y, fit_decoder(X, y, spec).predict(X))),
+        "n_rows": len(y),
     }
 
 
@@ -735,21 +625,23 @@ def compute_pairwise_r2_matrix(
     sessions_sbp: List[np.ndarray],
     sessions_vel: List[np.ndarray],
     mean_correct: bool = False,
+    spec: DecoderSpec = SPEC,
 ) -> np.ndarray:
     """
-    For each (train session i, test session j), fit Ridge on session i and score on session j.
-    Returns R[i, j] = R² when training on i and testing on j. Shape (N, N).
+    For each (train session i, test session j), fit the spec's decoder on session i and score
+    on session j (D-15). Returns R[i, j], shape (N, N). The diagonal is the held-out blocked
+    same-day R² of session i, never a score on training rows (ERR-01).
     If mean_correct=True, correct predictions per test session before R².
     """
-    N = len(sessions_sbp)
+    designs = [session_design(f, v, spec)[:2] for f, v in zip(sessions_sbp, sessions_vel)]
+    N = len(designs)
     R = np.zeros((N, N))
-    alpha_grid = DECODER_ALPHAS
-    for i in range(N):
-        X_i, y_i = _make_xy(sessions_sbp[i], sessions_vel[i])
-        model = RidgeCV(alphas=alpha_grid, cv=5)
-        model.fit(X_i, y_i)
-        for j in range(N):
-            X_j, y_j = _make_xy(sessions_sbp[j], sessions_vel[j])
+    for i, (X_i, y_i) in enumerate(designs):
+        model = fit_decoder(X_i, y_i, spec)
+        for j, (X_j, y_j) in enumerate(designs):
+            if i == j:
+                R[i, j] = float(same_day_r2(X_i, y_i, spec).mean())
+                continue
             y_pred = model.predict(X_j)
             if mean_correct:
                 y_pred = y_pred - np.mean(y_pred) + np.mean(y_j)
@@ -900,6 +792,7 @@ def decoder_comparison_table(
     sigma_bins: float = 2.5,
     include_robust: bool = False,
     robust_block_size_bins: int = DEFAULT_ROBUST_BLOCK_SIZE_BINS,
+    spec: DecoderSpec = SPEC,
 ) -> pd.DataFrame:
     """
     R² per horizon for decoder feature sets built from SBP/TCR summaries.
@@ -908,13 +801,11 @@ def decoder_comparison_table(
     `include_robust=True`, the table also includes robust session-level and
     robust block-level variants for both `r_norm` and `pop_rate_norm`.
 
-    Horizons: intra_day (5-fold CV on Day 0), 1_7_days (train 0, test 1..7), 1_month_plus (train 0, test ≥30 d later).
+    Horizons (D-15): intra_day = held-out blocked same-day R² of Day 0; 1_7_days and 1_month_plus =
+    mean R² of the Day-0 decoder on later sessions 1–7 and ≥ 30 days after Day 0, by session date
+    (it used to take sessions 1–7 by index, which are days 3–28, ERR-12). Decoder from `spec`.
     If sessions_tcr is None, raw_mean and pop_rate_norm use SBP (column labels still distinguish).
     """
-    N = len(sessions_sbp)
-    ref_date_str = session_dates[0]
-    ref_date = datetime.strptime(ref_date_str, "%Y%m%d")
-
     # Use TCR if provided, else SBP for raw_mean and pop_rate_norm
     raw_sessions = sessions_tcr if sessions_tcr is not None else sessions_sbp
 
@@ -973,45 +864,23 @@ def decoder_comparison_table(
             ]
         )
 
-    horizons = ["intra_day", "1_7_days", "1_month_plus"]
+    gaps = compute_day_offsets(session_dates)
     rows = []
-
     for feat_name, sessions_feat in feature_sets:
-        X0, y0 = _make_xy(sessions_feat[0], sessions_vel[0])
+        designs = [session_design(f, v, spec)[:2] for f, v in zip(sessions_feat, sessions_vel)]
+        X0, y0 = designs[0]
+        model = fit_decoder(X0, y0, spec)
 
-        # Intra-day: 5-fold CV on Day 0
-        cv_scores = cross_val_score(
-            RidgeCV(alphas=DECODER_ALPHAS, cv=5),
-            X0,
-            y0,
-            cv=5,
-            scoring="r2",
-        )
-        intra_r2 = float(np.mean(cv_scores))
-
-        # 1–7 days: train 0, test 1..min(7, N-1)
-        model = RidgeCV(alphas=DECODER_ALPHAS, cv=5)
-        model.fit(X0, y0)
-        r2_1_7 = []
-        for k in range(1, min(8, N)):
-            X_k, y_k = _make_xy(sessions_feat[k], sessions_vel[k])
-            r2_1_7.append(r2_score(y_k, model.predict(X_k)))
-        r2_1_7_val = float(np.mean(r2_1_7)) if r2_1_7 else np.nan
-
-        # 1 month+: train 0, test sessions with date >= ref + 30 days
-        r2_month = []
-        for k in range(1, N):
-            d = datetime.strptime(session_dates[k], "%Y%m%d")
-            if (d - ref_date).days >= 30:
-                X_k, y_k = _make_xy(sessions_feat[k], sessions_vel[k])
-                r2_month.append(r2_score(y_k, model.predict(X_k)))
-        r2_month_val = float(np.mean(r2_month)) if r2_month else np.nan
+        def mean_r2(lo: float, hi: float) -> float:
+            """Mean R² of the Day-0 model on later sessions lo ≤ gap ≤ hi days from Day 0 (dates, ERR-12)."""
+            vals = [r2_score(y, model.predict(X)) for k, (X, y) in enumerate(designs) if k and lo <= gaps[k] <= hi]
+            return float(np.mean(vals)) if vals else np.nan
 
         rows.append({
             "feature_set": feat_name,
-            "intra_day": round(intra_r2, 4),
-            "1_7_days": round(r2_1_7_val, 4),
-            "1_month_plus": round(r2_month_val, 4),
+            "intra_day": round(float(same_day_r2(X0, y0, spec).mean()), 4),
+            "1_7_days": round(mean_r2(1, 7), 4),
+            "1_month_plus": round(mean_r2(30, np.inf), 4),
         })
 
     return pd.DataFrame(rows)

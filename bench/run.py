@@ -24,11 +24,11 @@ from sklearn.metrics import r2_score
 
 from bench.cfd import cfd_bootstrap, cfd_days, kept_ratio
 from bench.guards import is_causal
-from bench.plan import leaking_plans, n_rows, plan_scores
+from bench.plan import leaking_plans, plan_scores
 from bench.scoreboard import GAP_BINS, REPO, RESULTS, SCOREBOARD_COLUMNS, SCOREBOARD_CSV, SCOREBOARD_MD, render
 from bench.spec import FEATURE_STATE_BYTES_PER_CH, FEATURES, SPEC, DecoderSpec
 from bench.splits import SPLITS_PATH, load_splits
-from neurosignal.gold.drift import _make_xy
+from neurosignal.gold.decoder import GramRidge, fit_decoder, session_design
 from neurosignal.io.loaders import list_link_nwb_paths, load_link_sessions, session_date_from_path
 
 PAIRS_CSV = RESULTS / "bench_v0_pairs.csv"
@@ -57,50 +57,8 @@ def load_frozen_sessions(splits: Dict) -> tuple:
 
 
 def designs(features: List[np.ndarray], vel: List[np.ndarray], dates: List[str], spec: DecoderSpec) -> Dict:
-    """(X, y) per session after the warm-up trim; SBP and velocity cut to a common length first."""
-    out = {}
-    for d, f, v in zip(dates, features, vel):
-        T = min(len(f), len(v))
-        X, y = _make_xy(f[spec.warmup_bins:T], v[spec.warmup_bins:T], spec.window_bins, spec.lag_bins)
-        assert X.shape[0] == n_rows(T - spec.warmup_bins, spec)
-        out[d] = (X, y, T - spec.warmup_bins)
-    return out
-
-
-class GramRidge:
-    """
-    Same model as sklearn RidgeCV(alphas, cv=None): centred X and y, unpenalised intercept,
-    alpha with the lowest mean squared leave-one-out error (first one on ties), training rows only.
-    One eigendecomposition of XᵀX serves every alpha, instead of an SVD of X per fit:
-    with Q = X_c V and d = 1/(s + α), fitted = Q (d ∘ Qᵀy_c) and leverage h = (Q∘Q) d + 1/n.
-    """
-
-    def __init__(self, alphas: tuple):
-        self.alphas = alphas
-
-    def fit(self, X: np.ndarray, y: np.ndarray) -> "GramRidge":
-        x_mean, y_mean = X.mean(axis=0), y.mean()
-        Xc, yc = X - x_mean, y - y_mean
-        s, V = np.linalg.eigh(Xc.T @ Xc)
-        Q = Xc @ V
-        Qy, Q2, n = Q.T @ yc, Q * Q, len(y)
-        best_err, best_d = np.inf, None
-        for alpha in self.alphas:
-            d = 1.0 / (s + alpha)
-            loo = (yc - Q @ (d * Qy)) / (1.0 - (Q2 @ d + 1.0 / n))
-            err = float(np.mean(loo**2))
-            if err < best_err:
-                best_err, best_d, self.alpha_ = err, d, alpha
-        self.coef_ = V @ (best_d * Qy)
-        self.intercept_ = y_mean - x_mean @ self.coef_
-        return self
-
-    def predict(self, X: np.ndarray) -> np.ndarray:
-        return X @ self.coef_ + self.intercept_
-
-
-def fit(X: np.ndarray, y: np.ndarray, spec: DecoderSpec) -> GramRidge:
-    return GramRidge(spec.alphas).fit(X, y)
+    """(X, y, bins) per session from the package's session_design (warm-up trimmed, D-15)."""
+    return {d: session_design(f, v, spec) for d, f, v in zip(dates, features, vel)}
 
 
 def score_cross_day(design: Dict, plans: List, spec: DecoderSpec) -> Dict[tuple, float]:
@@ -112,7 +70,7 @@ def score_cross_day(design: Dict, plans: List, spec: DecoderSpec) -> Dict[tuple,
             continue
         if p.cal not in models:
             X_cal, y_cal, _ = design[p.cal]
-            models[p.cal] = fit(X_cal[p.train_rows], y_cal[p.train_rows], spec)
+            models[p.cal] = fit_decoder(X_cal[p.train_rows], y_cal[p.train_rows], spec)
         X_t, y_t, _ = design[p.test]
         cross[(p.cal, p.test)] = r2_score(y_t[p.test_rows], models[p.cal].predict(X_t[p.test_rows]))
     return cross
@@ -125,7 +83,7 @@ def score_same_day(design: Dict, plans: List, spec: DecoderSpec) -> Dict[str, fl
         if p.kind != "same_day":
             continue
         X, y, _ = design[p.cal]
-        model = fit(X[p.train_rows], y[p.train_rows], spec)
+        model = fit_decoder(X[p.train_rows], y[p.train_rows], spec)
         same.setdefault(p.cal, []).append(r2_score(y[p.test_rows], model.predict(X[p.test_rows])))
     return {d: float(np.mean(v)) for d, v in same.items()}
 

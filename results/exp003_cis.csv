@@ -1,0 +1,31 @@
+run_date,commit,id,quantity,value,ci_lo,ci_hi,excludes_zero,n,published
+2026-10-24,9e6b77f,A1,"paper ridge, index velocity (median)",0.2456,0.2142,0.2642,yes,30 sessions,
+2026-10-24,9e6b77f,A1m,"paper ridge, mean of 4 outputs (median)",0.3011,0.2899,0.3308,yes,30 sessions,
+2026-10-24,9e6b77f,A2,our spec on z-scored SBP (median),0.1811,0.1503,0.1924,yes,30 sessions,
+2026-10-24,9e6b77f,A3,our spec on acausal r_norm (median),0.2536,0.2311,0.2785,yes,30 sessions,
+2026-10-24,9e6b77f,A2-1,"A2 − A1, paired (median)",-0.0626,-0.0695,-0.0523,yes,30 sessions,
+2026-10-24,9e6b77f,A3-1,"A3 − A1, paired (median)",0.0161,0.0074,0.0193,yes,30 sessions,
+2026-10-24,9e6b77f,B1,"mean off-diag R², r_norm − raw",0.6616,0.3934,1.0755,yes,870 pairs / 30 sessions,+0.662
+2026-10-24,9e6b77f,B2,"mean off-diag R², r_norm − z-score only (smoothing)",0.0040,-0.0138,0.0219,no,870 pairs / 30 sessions,+0.004
+2026-10-24,9e6b77f,B3,"mean off-diag R², causal EWMA − acausal r_norm",-0.0061,-0.0219,0.0109,no,870 pairs / 30 sessions,−0.0061
+2026-10-24,9e6b77f,B4,"mean off-diag R², causal window − causal EWMA",-0.0008,-0.0035,0.0019,no,870 pairs / 30 sessions,−0.0008
+2026-10-24,9e6b77f,L-raw,"mean off-diag R², raw (level)",-0.6358,-1.0628,-0.3391,yes,870 pairs / 30 sessions,
+2026-10-24,9e6b77f,L-r_norm,"mean off-diag R², r_norm (level)",0.0258,-0.0176,0.0761,no,870 pairs / 30 sessions,
+2026-10-24,9e6b77f,L-z_only,"mean off-diag R², z_only (level)",0.0219,-0.0078,0.0584,no,870 pairs / 30 sessions,
+2026-10-24,9e6b77f,L-causal_window,"mean off-diag R², causal_window (level)",0.0190,-0.0122,0.0567,no,870 pairs / 30 sessions,
+2026-10-24,9e6b77f,L-ewma_0.01,"mean off-diag R², ewma_0.01 (level)",0.0198,-0.0128,0.0594,no,870 pairs / 30 sessions,
+2026-10-24,9e6b77f,B5a,"bench kept ratio 1–7 d, causal − acausal (medians)",0.0086,-0.1052,0.0931,no,31 pairs,+0.0022
+2026-10-24,9e6b77f,B5b,"bench kept ratio 8–30 d, causal − acausal (medians)",0.0111,-0.0862,0.1654,no,78 pairs,+0.0105
+2026-10-24,9e6b77f,B6,"bench month+ R², causal − acausal (medians)",0.0075,-0.0177,0.0331,no,327 pairs,+0.0075
+2026-10-24,9e6b77f,B7a,"α sweep, Day-0 decoder: α 0.01 − α 0.003",0.0044,0.0024,0.0064,yes,29 test sessions,+0.0045
+2026-10-24,9e6b77f,B7b,"α sweep, Day-0 decoder: α 0.01 − α 0.03",0.0012,-0.0039,0.0056,no,29 test sessions,+0.0012
+2026-10-24,9e6b77f,B8,EXP-002 forward: MLP − Ridge same inputs,-0.0703,-0.0963,-0.0412,yes,13 test sessions,−0.070
+2026-10-24,9e6b77f,B8v1,EXP-002 forward: Ridge spec v1 pooled (level),-0.0033,-0.0697,0.0500,no,13 test sessions,−0.003
+2026-10-24,9e6b77f,B9,"r_norm Day-0 decoder, month+ mean R² (level)",-0.0465,-0.1294,0.0327,no,21 test sessions,−0.0465
+2026-10-24,9e6b77f,C,"held-out mean off-diag R², picked α 0.01 − α 0.01",0.0000,0.0000,0.0000,no,156 pairs / 13 sessions,
+2026-10-24,9e6b77f,C-0.001,α 0.001: selection / held-out mean off-diag R²,-0.0045,,,,selection +0.1208,
+2026-10-24,9e6b77f,C-0.003,α 0.003: selection / held-out mean off-diag R²,0.0060,,,,selection +0.1312,
+2026-10-24,9e6b77f,C-0.01,α 0.01: selection / held-out mean off-diag R²,0.0050,,,,selection +0.1363,picked
+2026-10-24,9e6b77f,C-0.03,α 0.03: selection / held-out mean off-diag R²,0.0008,,,,selection +0.1244,
+2026-10-24,9e6b77f,C-0.1,α 0.1: selection / held-out mean off-diag R²,-0.0147,,,,selection +0.0710,
+2026-10-24,9e6b77f,C-0.3,α 0.3: selection / held-out mean off-diag R²,-0.0078,,,,selection +0.0412,

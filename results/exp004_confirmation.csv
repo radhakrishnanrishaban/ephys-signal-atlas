@@ -1,0 +1,13 @@
+run_date,commit,id,quantity,value,ci_lo,ci_hi,excludes_zero,n
+2026-10-24,d02521f,C1-r_norm_causal,"r_norm_causal: same-day mean, v1 → chosen (0.1810 → 0.2620), difference",0.0810,0.0668,0.0973,yes,13 sessions
+2026-10-24,d02521f,C1-r_norm_acausal,"r_norm_acausal: same-day mean, v1 → chosen (0.2693 → 0.2755), difference",0.0062,0.0026,0.0101,yes,13 sessions
+2026-10-24,d02521f,C1-raw_sbp,"raw_sbp: same-day mean, v1 → chosen (0.1731 → 0.2427), difference",0.0696,0.0550,0.0868,yes,13 sessions
+2026-10-24,d02521f,C2-v1,"causal ÷ acausal same-day (medians), v1",0.6251,,,,
+2026-10-24,d02521f,C2-chosen,"causal ÷ acausal same-day (medians), chosen",0.9714,,,,
+2026-10-24,d02521f,C2-d,"causal ÷ acausal, chosen − v1",0.3463,0.1857,0.3798,yes,13 sessions
+2026-10-24,d02521f,C3-causal-v1,"r_norm_causal: mean off-diag R², v1",0.0050,-0.0296,0.0477,no,156 pairs
+2026-10-24,d02521f,C3-causal-chosen,"r_norm_causal: mean off-diag R², chosen",0.0307,-0.0145,0.0816,no,156 pairs
+2026-10-24,d02521f,C3-causal-d,"r_norm_causal: mean off-diag R², chosen − v1",0.0257,0.0041,0.0482,yes,156 pairs
+2026-10-24,d02521f,C3-acausal-v1,"r_norm_acausal: mean off-diag R², v1",-0.0012,-0.0506,0.0523,no,156 pairs
+2026-10-24,d02521f,C3-acausal-chosen,"r_norm_acausal: mean off-diag R², chosen",0.0029,-0.0472,0.0554,no,156 pairs
+2026-10-24,d02521f,C3-acausal-d,"r_norm_acausal: mean off-diag R², chosen − v1",0.0042,-0.0009,0.0095,no,156 pairs

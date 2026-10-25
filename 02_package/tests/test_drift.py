@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from neurosignal.gold.drift import (
-    _make_xy,
+    make_xy,
     compute_day_offsets,
     robust_zscore_per_channel_blocks,
     robust_zscore_per_channel_day,
@@ -19,7 +19,7 @@ def test_make_xy_window_and_lag_alignment_on_ramp(window_bins, lag_bins):
     sbp = t_all[:, None] * 10.0 + np.arange(n_ch)  # sbp[t, c] = 10t + c names its own bin
     vel = t_all                                     # vel[t] = t
 
-    X, y = _make_xy(sbp, vel, window_bins=window_bins, lag_bins=lag_bins)
+    X, y = make_xy(sbp, vel, window_bins=window_bins, lag_bins=lag_bins)
 
     base_t = np.arange(window_bins, T - lag_bins)
     assert X.shape == (len(base_t), n_ch * (window_bins + 1))

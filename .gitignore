@@ -25,6 +25,7 @@ draft/
 
 02_data/
 01_data/**/*.nwb
+01_data/**/*.mat
 
 # Generated research outputs under 04_output (README_figures.md may be committed)
 04_output/**/*.pdf
