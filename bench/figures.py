@@ -22,7 +22,7 @@ from sklearn.isotonic import IsotonicRegression
 
 from bench.scoreboard import REPO, RESULTS, SCOREBOARD_CSV
 from bench.spec import SPEC
-from neurosignal.gold.drift import AXIS_LABEL_FONTSIZE, LEGEND_FONTSIZE, TITLE_FONTSIZE
+from neurosignal.viz.style import AXIS_LABEL_FONTSIZE, LEGEND_FONTSIZE, TITLE_FONTSIZE
 
 PAIRS_CSV = RESULTS / "bench_v0_pairs.csv"
 PANELS = {"raw_sbp": ("Raw SBP", "#2a78d6"), "r_norm_causal": ("Causal r_norm", "#eb6834")}  # validated pair

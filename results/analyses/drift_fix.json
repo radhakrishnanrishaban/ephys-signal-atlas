@@ -1,0 +1,94 @@
+{
+ "question": "Does per-session normalisation stop a decoder trained on one day from failing on another?",
+ "commit": "ed826af",
+ "dirty": false,
+ "spec": "v2",
+ "run_date": "2026-10-26",
+ "sessions": {
+  "n": 30,
+  "first": "20200127",
+  "last": "20210414",
+  "span_days": 443
+ },
+ "cross_session_r2": {
+  "raw": {
+   "value": -0.9071,
+   "ci95": [
+    -1.3807,
+    -0.5236
+   ],
+   "excludes_zero": true,
+   "n": "870 pairs / 30 sessions"
+  },
+  "z_only": {
+   "value": 0.0507,
+   "ci95": [
+    0.0139,
+    0.095
+   ],
+   "excludes_zero": true,
+   "n": "870 pairs / 30 sessions"
+  },
+  "r_norm": {
+   "value": 0.03,
+   "ci95": [
+    -0.0118,
+    0.0789
+   ],
+   "excludes_zero": false,
+   "n": "870 pairs / 30 sessions"
+  }
+ },
+ "differences": {
+  "r_norm_minus_raw": {
+   "value": 0.9371,
+   "ci95": [
+    0.5764,
+    1.399
+   ],
+   "excludes_zero": true,
+   "n": "870 pairs / 30 sessions"
+  },
+  "smoothing": {
+   "value": -0.0207,
+   "ci95": [
+    -0.0282,
+    -0.0137
+   ],
+   "excludes_zero": true,
+   "n": "870 pairs / 30 sessions"
+  }
+ },
+ "day0_decoder_r_norm": {
+  "same_day_heldout": 0.3409,
+  "days_1_7": {
+   "values": [
+    0.1656
+   ],
+   "days": [
+    3
+   ]
+  },
+  "month_plus": {
+   "value": -0.041,
+   "ci95": [
+    -0.1216,
+    0.0368
+   ],
+   "excludes_zero": false,
+   "n": "21 sessions"
+  }
+ },
+ "day0_later_sessions_below_zero": {
+  "raw": 27,
+  "r_norm": 13,
+  "out_of": 29,
+  "r_norm_first_failure": "20200626"
+ },
+ "figure": "drift_fix/pairwise_r2_raw_vs_r_norm.png",
+ "cost": {
+  "decoder_macs_per_bin": 576,
+  "decoder_fits": 540,
+  "runtime_s": 233.0
+ }
+}

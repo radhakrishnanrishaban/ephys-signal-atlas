@@ -19,8 +19,8 @@ from pathlib import Path
 
 import numpy as np
 
-from neurosignal.gold.decoder import SPEC, session_design
-from neurosignal.gold.drift import compute_decoder_r2_per_day, compute_same_day_r2_blocked
+from neurosignal.decoders.linear import SPEC, session_design
+from neurosignal.metrics.drift import compute_decoder_r2_per_day, compute_same_day_r2_blocked
 from neurosignal.io.loaders import list_link_nwb_paths, load_link_sessions, session_date_from_path
 
 REPO = Path(__file__).resolve().parents[1]

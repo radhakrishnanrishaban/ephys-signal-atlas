@@ -1,27 +1,23 @@
 """
 neurosignal: electrophysiology analysis toolkit (LINK NWB, SBP drift, decoders).
 
-This package is designed to be imported once per notebook:
+Subpackages, by role (D-21):
 
-    import neurosignal
-
-Subpackages expose the concrete functions:
-
-- neurosignal.io
-- neurosignal.bronze
-- neurosignal.silver
-- neurosignal.gold
-- neurosignal.viz
-- neurosignal.utils
+- neurosignal.io        NWB loaders and inspection
+- neurosignal.features  per-session normalisers: acausal `r_norm`, causal (streaming), joint SBP + TCR
+- neurosignal.decoders  the decoder spec (Ridge), the pooled MLP, the LINK-paper baseline
+- neurosignal.align     cross-session alignment (Procrustes)
+- neurosignal.metrics   decoder R² across days, session QC, session-bootstrap statistics
+- neurosignal.viz       figure style, export and plots
 """
 
 __all__ = [
     "io",
-    "bronze",
-    "silver",
-    "gold",
+    "features",
+    "decoders",
+    "align",
+    "metrics",
     "viz",
-    "utils",
 ]
 
 __version__ = "0.2.0"

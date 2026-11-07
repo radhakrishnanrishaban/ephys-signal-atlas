@@ -1,0 +1,145 @@
+{
+ "question": "Does a nonlinear decoder (MLP) transfer to later days better than a linear one, held out?",
+ "commit": "f893e82",
+ "dirty": false,
+ "spec": "v2",
+ "run_date": "2026-10-26",
+ "spec_mlp": "mlp-v2",
+ "forward_split": {
+  "train": {
+   "n": 17,
+   "first": "20200127",
+   "last": "20200320",
+   "last_day": 53
+  },
+  "test": {
+   "n": 13,
+   "first": "20200626",
+   "last": "20210414",
+   "days": [
+    151,
+    443
+   ]
+  },
+  "mlp": {
+   "value": -0.1516,
+   "ci95": [
+    -0.2042,
+    -0.0938
+   ],
+   "excludes_zero": true,
+   "n": "13 held-out sessions"
+  },
+  "mlp_by_seed": [
+   -0.1583,
+   -0.1291,
+   -0.1674
+  ],
+  "ridge_same_inputs": {
+   "value": 0.0013,
+   "ci95": [
+    -0.0023,
+    0.0047
+   ],
+   "excludes_zero": false,
+   "n": "13 held-out sessions"
+  },
+  "ridge_spec": {
+   "value": 0.0032,
+   "ci95": [
+    -0.0569,
+    0.0516
+   ],
+   "excludes_zero": false,
+   "n": "13 held-out sessions"
+  },
+  "mlp_minus_ridge_same": {
+   "value": -0.1529,
+   "ci95": [
+    -0.2036,
+    -0.0966
+   ],
+   "excludes_zero": true,
+   "n": "13 held-out sessions"
+  },
+  "mlp_sessions_at_or_below_zero_by_seed": [
+   11,
+   11,
+   13
+  ]
+ },
+ "in_sample": {
+  "mlp_same_sessions": {
+   "value": 0.1405,
+   "ci95": [
+    0.0974,
+    0.1831
+   ],
+   "excludes_zero": true,
+   "n": "the same 13 sessions, trained on"
+  },
+  "mlp_by_seed": [
+   0.1494,
+   0.1284,
+   0.1438
+  ],
+  "inflation": {
+   "value": 0.2921,
+   "ci95": [
+    0.2343,
+    0.349
+   ],
+   "excludes_zero": true,
+   "n": "13 held-out sessions"
+  }
+ },
+ "grouped_split": {
+  "mlp": {
+   "value": 0.009,
+   "ci95": [
+    -0.0148,
+    0.0318
+   ],
+   "excludes_zero": false,
+   "n": "30 held-out sessions"
+  },
+  "ridge_same_inputs": {
+   "value": 0.0035,
+   "ci95": [
+    -0.0002,
+    0.0071
+   ],
+   "excludes_zero": false,
+   "n": "30 held-out sessions"
+  },
+  "mlp_minus_ridge_same": {
+   "value": 0.0054,
+   "ci95": [
+    -0.0178,
+    0.0281
+   ],
+   "excludes_zero": false,
+   "n": "30 held-out sessions"
+  }
+ },
+ "input_compression": {
+  "pca_components": 5,
+  "pca_variance_kept": 0.189,
+  "ridge_same_inputs_on_training_sessions": 0.0101,
+  "ridge_spec_on_training_sessions": 0.2796
+ },
+ "figure": "mlp_heldout/r2_timeline_forward.png",
+ "cost": {
+  "macs_per_bin": {
+   "mlp": 22656,
+   "ridge_same": 1065,
+   "ridge_spec": 576
+  },
+  "mlp_fits": 21,
+  "mlp_fit_s": [
+   39,
+   107
+  ],
+  "runtime_s": 1473.8
+ }
+}

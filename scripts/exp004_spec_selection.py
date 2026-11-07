@@ -7,7 +7,7 @@ EXP-004 (EDA-09, D-18): pick the decoder spec's window and lag on the 17 early s
 Selection: mean held-out same-day R² (5 blocked folds, unshifted grid) over the selection sessions for
 causal r_norm, window ∈ {2, 5, 7, 10} × lag ∈ {0, 1, 2, 3}; the smallest window within 0.005 of the best
 wins, then the highest score. Confirmation on the later sessions, chosen spec vs v1: same-day R² (seeds 0–2),
-causal ÷ acausal, and mean off-diagonal cross-session R², each with a session-bootstrap CI (gold/stats.py).
+causal ÷ acausal, and mean off-diagonal cross-session R², each with a session-bootstrap CI (metrics/stats.py).
 Refuses to write with uncommitted changes outside results/, so every row traces to a commit.
 """
 
@@ -24,9 +24,10 @@ import numpy as np
 from bench.run import git_state, load_frozen_sessions
 from bench.scoreboard import REPO, RESULTS
 from bench.splits import load_splits
-from neurosignal.gold.decoder import SPEC as _CURRENT, DecoderSpec, grid_offset, same_day_r2, session_design
-from neurosignal.gold.drift import compute_pairwise_r2_matrix, normalize_sessions_sbp_gold
-from neurosignal.gold.stats import (
+from neurosignal.decoders.linear import SPEC as _CURRENT, DecoderSpec, grid_offset, same_day_r2, session_design
+from neurosignal.features.normalize import normalize_sessions_sbp_gold
+from neurosignal.metrics.drift import compute_pairwise_r2_matrix
+from neurosignal.metrics.stats import (
     bootstrap_off_diagonal_mean,
     bootstrap_session_mean,
     ci95,
@@ -34,7 +35,7 @@ from neurosignal.gold.stats import (
     session_draws,
     weighted_median,
 )
-from neurosignal.gold.streaming import normalize_sessions_sbp_gold_causal
+from neurosignal.features.causal import normalize_sessions_sbp_gold_causal
 
 GRID_CSV = RESULTS / "exp004_selection.csv"
 CONFIRM_CSV = RESULTS / "exp004_confirmation.csv"

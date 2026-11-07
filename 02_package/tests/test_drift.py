@@ -3,13 +3,13 @@
 import numpy as np
 import pytest
 
-from neurosignal.gold.drift import (
-    make_xy,
-    compute_day_offsets,
+from neurosignal.decoders.linear import make_xy
+from neurosignal.features.normalize import (
     robust_zscore_per_channel_blocks,
     robust_zscore_per_channel_day,
     zscore_per_channel_day,
 )
+from neurosignal.metrics.drift import compute_day_offsets
 
 
 @pytest.mark.parametrize("window_bins, lag_bins", [(0, 0), (3, 0), (0, 2), (3, 2)])

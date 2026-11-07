@@ -110,7 +110,7 @@ def render(spec: DecoderSpec = SPEC, today: Optional[date] = None) -> None:
         f"median over seeds {', '.join(map(str, spec.seeds))} (each shifts the same-day fold grid); "
         f"95 % CI from {spec.n_boot:,} session-resampled draws per seed, pooled. "
         "CFD is written only for causal features; acausal rows are reference R² values (D-13). "
-        "Cost: decoder multiply-accumulates per 20 ms bin and float64 feature state per channel; "
+        "Cost: decoder multiply-accumulates per 20 ms bin and feature state per channel (float64; 32-bit integers for `r_norm_causal_q`, EXP-006); "
         "rows before these columns existed have them empty.",
         "",
         "`commit` is the private development commit that produced the row. Each public release tag lists "

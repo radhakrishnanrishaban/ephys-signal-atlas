@@ -1,0 +1,36 @@
+run_date,commit,id,quantity,value,ci_lo,ci_hi,excludes_zero,n
+2026-10-28,3409f70,K1-v2,"same-day median, v2",0.2570,,,,13 sessions
+2026-10-28,3409f70,K1-v1,"same-day median, v1",0.2571,,,,13 sessions
+2026-10-28,3409f70,K1-acausal,"same-day median, acausal",0.2647,,,,13 sessions
+2026-10-28,3409f70,K1-v2-v1,"same-day, v2 − v1 (mean of paired differences)",-0.0000,-0.0002,0.0001,no,13 sessions
+2026-10-28,3409f70,K1-v2-acausal,"same-day, v2 − acausal (mean of paired differences)",-0.0135,-0.0204,-0.0070,yes,13 sessions
+2026-10-28,3409f70,K2-v2-later-all,"cross-session mean, v2, later, all",0.0308,-0.0143,0.0818,no,156 pairs / 13 sessions
+2026-10-28,3409f70,K2-v1-later-all,"cross-session mean, v1, later, all",0.0307,-0.0145,0.0816,no,156 pairs / 13 sessions
+2026-10-28,3409f70,K2-acausal-later-all,"cross-session mean, acausal, later, all",0.0029,-0.0472,0.0554,no,156 pairs / 13 sessions
+2026-10-28,3409f70,K2-v2-v1-later-all,"cross-session, v2 − v1, later, all",0.0001,-0.0000,0.0002,no,156 pairs / 13 sessions
+2026-10-28,3409f70,K2-v2-acausal-later-all,"cross-session, v2 − acausal, later, all",0.0279,0.0146,0.0404,yes,156 pairs / 13 sessions
+2026-10-28,3409f70,K2-v2-later-8–30 d,"cross-session mean, v2, later, 8–30 d",0.1541,0.0353,0.2118,yes,22 pairs / 13 sessions
+2026-10-28,3409f70,K2-v1-later-8–30 d,"cross-session mean, v1, later, 8–30 d",0.1541,0.0350,0.2118,yes,22 pairs / 13 sessions
+2026-10-28,3409f70,K2-acausal-later-8–30 d,"cross-session mean, acausal, later, 8–30 d",0.1428,0.0102,0.1964,yes,22 pairs / 13 sessions
+2026-10-28,3409f70,K2-v2-v1-later-8–30 d,"cross-session, v2 − v1, later, 8–30 d",0.0001,-0.0001,0.0003,no,22 pairs / 13 sessions
+2026-10-28,3409f70,K2-v2-acausal-later-8–30 d,"cross-session, v2 − acausal, later, 8–30 d",0.0113,-0.0129,0.0363,no,22 pairs / 13 sessions
+2026-10-28,3409f70,K2-v2-later-> 30 d,"cross-session mean, v2, later, > 30 d",0.0106,-0.0344,0.0581,no,134 pairs / 13 sessions
+2026-10-28,3409f70,K2-v1-later-> 30 d,"cross-session mean, v1, later, > 30 d",0.0105,-0.0346,0.0579,no,134 pairs / 13 sessions
+2026-10-28,3409f70,K2-acausal-later-> 30 d,"cross-session mean, acausal, later, > 30 d",-0.0200,-0.0699,0.0285,no,134 pairs / 13 sessions
+2026-10-28,3409f70,K2-v2-v1-later-> 30 d,"cross-session, v2 − v1, later, > 30 d",0.0001,-0.0000,0.0003,no,134 pairs / 13 sessions
+2026-10-28,3409f70,K2-v2-acausal-later-> 30 d,"cross-session, v2 − acausal, later, > 30 d",0.0306,0.0155,0.0465,yes,134 pairs / 13 sessions
+2026-10-28,3409f70,K2-v2-selection-1–7 d,"cross-session mean, v2, selection, 1–7 d (not held out)",0.2272,0.1883,0.2687,yes,62 pairs / 17 sessions
+2026-10-28,3409f70,K2-v1-selection-1–7 d,"cross-session mean, v1, selection, 1–7 d (not held out)",0.2273,0.1883,0.2687,yes,62 pairs / 17 sessions
+2026-10-28,3409f70,K2-acausal-selection-1–7 d,"cross-session mean, acausal, selection, 1–7 d (not held out)",0.2172,0.1783,0.2568,yes,62 pairs / 17 sessions
+2026-10-28,3409f70,K2-v2-v1-selection-1–7 d,"cross-session, v2 − v1, selection, 1–7 d (not held out)",-0.0000,-0.0001,0.0001,no,62 pairs / 17 sessions
+2026-10-28,3409f70,K2-v2-acausal-selection-1–7 d,"cross-session, v2 − acausal, selection, 1–7 d (not held out)",0.0101,0.0024,0.0166,yes,62 pairs / 17 sessions
+2026-10-28,3409f70,M2-floor,exit floor −0.02 × acausal same-day median,-0.0053,,,,
+2026-10-28,3409f70,M2-8–30 d,"exit criterion holds, later sessions, 8–30 d (1 = yes)",0.0000,,,,
+2026-10-28,3409f70,M2-> 30 d,"exit criterion holds, later sessions, > 30 d (1 = yes)",1.0000,,,,
+2026-10-28,3409f70,K4-v2,"CFD days, v2 (CI 42–82, seeds 52–52)",52.0000,,,,435 pairs / 30 sessions
+2026-10-28,3409f70,K4-v2-same,"bench same-day median, v2",0.2630,,,,
+2026-10-28,3409f70,K4-v1,"CFD days, v1 (CI 42–82, seeds 52–52)",52.0000,,,,435 pairs / 30 sessions
+2026-10-28,3409f70,K4-v1-same,"bench same-day median, v1",0.2630,,,,
+2026-10-28,3409f70,causal,future-perturbation check passes (1 = yes),1.0000,,,,
+2026-10-28,3409f70,clip-rate,fraction of scored bins with |z| at the ±6 clip,0.0003,,,,77174496 bin × channel
+2026-10-28,3409f70,state-bytes,"state per channel, float64 (float32 = half)",24.0000,,,,

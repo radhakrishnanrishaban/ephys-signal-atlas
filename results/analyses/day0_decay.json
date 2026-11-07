@@ -1,0 +1,150 @@
+{
+ "question": "How badly does a decoder trained on Day 0 fail on later days, and what changes in the signal?",
+ "commit": "b83880b",
+ "dirty": false,
+ "spec": "v2",
+ "run_date": "2026-10-26",
+ "sessions": {
+  "n": 30,
+  "first": "20200127",
+  "last": "20210414",
+  "span_days": 443
+ },
+ "day0_heldout": {
+  "unshifted_grid": 0.3226,
+  "seeds": {
+   "0": 0.3241,
+   "1": 0.3234,
+   "2": 0.3217
+  },
+  "seed_median": 0.3234
+ },
+ "later_sessions": {
+  "below_zero": 27,
+  "out_of": 29,
+  "share_below_zero": {
+   "value": 0.931,
+   "ci95": [
+    0.8276,
+    1.0
+   ],
+   "excludes_zero": true,
+   "n": "29 later sessions"
+  },
+  "median": {
+   "value": -0.6188,
+   "ci95": [
+    -0.8336,
+    -0.3588
+   ],
+   "excludes_zero": true,
+   "n": "29 later sessions"
+  },
+  "lowest": {
+   "r2": -3.97,
+   "date": "20200225",
+   "day": 29
+  },
+  "first": {
+   "r2": -0.4322,
+   "date": "20200130",
+   "day": 3
+  },
+  "last": {
+   "r2": -0.8307,
+   "date": "20210414",
+   "day": 443
+  }
+ },
+ "by_gap": {
+  "1–7 days": {
+   "days": [
+    1,
+    7
+   ],
+   "values": [
+    -0.4322
+   ],
+   "median": {
+    "value": -0.4322,
+    "ci95": [
+     -0.4322,
+     -0.4322
+    ],
+    "excludes_zero": true,
+    "n": "1 sessions"
+   }
+  },
+  "8–30 days": {
+   "days": [
+    8,
+    30
+   ],
+   "values": [
+    -0.89,
+    -0.7294,
+    -1.3707,
+    -0.4583,
+    -0.3588,
+    -0.6292,
+    -3.97
+   ],
+   "median": {
+    "value": -0.7294,
+    "ci95": [
+     -1.3707,
+     -0.4583
+    ],
+    "excludes_zero": true,
+    "n": "7 sessions"
+   }
+  },
+  "over 30 days": {
+   "days": [
+    31,
+    null
+   ],
+   "values": [
+    -0.0659,
+    -0.124,
+    -0.8336,
+    -1.1933,
+    -1.0,
+    -0.4273,
+    0.0522,
+    0.0372,
+    -0.0977,
+    -2.6823,
+    -0.0657,
+    -0.6188,
+    -0.2848,
+    -0.2676,
+    -0.0328,
+    -0.5454,
+    -1.8571,
+    -1.597,
+    -0.9684,
+    -0.6505,
+    -0.8307
+   ],
+   "median": {
+    "value": -0.5454,
+    "ci95": [
+     -0.8336,
+     -0.124
+    ],
+    "excludes_zero": true,
+    "n": "21 sessions"
+   }
+  }
+ },
+ "figures": {
+  "decoder": "day0_decay/decoder_r2_by_session.png",
+  "signal": "day0_decay/channel_sbp_day0_vs_last.png"
+ },
+ "cost": {
+  "decoder_macs_per_bin": 576,
+  "decoder_fits": 21,
+  "runtime_s": 12.4
+ }
+}

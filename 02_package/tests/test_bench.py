@@ -9,7 +9,7 @@ from bench.plan import leaking_plans, plan_scores
 from bench.run import designs
 from bench.spec import FEATURES, SPEC
 from bench.splits import forward_pairs
-from neurosignal.gold.nonlinear import fit_pooled_decoders
+from neurosignal.decoders.mlp import fit_pooled_decoders
 
 DATES = ["20200127", "20200130", "20200204", "20200205"]
 LENGTHS = [1000, 1203, 997, 1500]

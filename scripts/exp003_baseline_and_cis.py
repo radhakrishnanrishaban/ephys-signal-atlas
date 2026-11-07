@@ -5,9 +5,9 @@ differences survive a 95 % CI, and does picking the causal α on separate sessio
     PYTHONPATH=. python scripts/exp003_baseline_and_cis.py              # writes results/exp003_*.csv
     PYTHONPATH=. python scripts/exp003_baseline_and_cis.py --dry-run    # prints only
 
-A  per session, on the paper's trial split: A1 the paper's ridge (gold/baseline.py), A2 our spec on the
+A  per session, on the paper's trial split: A1 the paper's ridge (decoders/baseline.py), A2 our spec on the
    paper's inputs, A3 our spec on acausal r_norm.
-B  CIs (gold/stats.py, session bootstrap, 2,000 draws) on the differences listed in EXP-003, recomputed
+B  CIs (metrics/stats.py, session bootstrap, 2,000 draws) on the differences listed in EXP-003, recomputed
    with compute_pairwise_r2_matrix (current SPEC), plus the bench pair rows and EXP-002 rows of the same spec.
 C  causal EWMA α picked on the 17 sessions up to 2020-03-20, reported on the 13 later sessions.
 Refuses to write with uncommitted changes outside results/, so every row traces to a commit.
@@ -26,15 +26,11 @@ import pandas as pd
 from bench.run import git_state
 from bench.scoreboard import GAP_BINS, REPO, RESULTS
 from bench.splits import load_splits
-from neurosignal.gold.baseline import paper_ridge_r2, spec_r2_on_paper_split
-from neurosignal.gold.decoder import SPEC
-from neurosignal.gold.drift import (
-    compute_day_offsets,
-    compute_pairwise_r2_matrix,
-    normalize_sessions_sbp_gold,
-    normalize_sessions_sbp_zscore_only,
-)
-from neurosignal.gold.stats import (
+from neurosignal.decoders.baseline import paper_ridge_r2, spec_r2_on_paper_split
+from neurosignal.decoders.linear import SPEC
+from neurosignal.features.normalize import normalize_sessions_sbp_gold, normalize_sessions_sbp_zscore_only
+from neurosignal.metrics.drift import compute_day_offsets, compute_pairwise_r2_matrix
+from neurosignal.metrics.stats import (
     bootstrap_off_diagonal_mean,
     bootstrap_pair_statistic,
     bootstrap_session_mean,
@@ -43,7 +39,7 @@ from neurosignal.gold.stats import (
     session_draws,
     weighted_median,
 )
-from neurosignal.gold.streaming import causal_smooth_ewma, causal_zscore_window, normalize_sessions_sbp_gold_causal
+from neurosignal.features.causal import causal_smooth_ewma, causal_zscore_window, normalize_sessions_sbp_gold_causal
 from neurosignal.io.loaders import LINK_KINEMATICS, list_link_nwb_paths, load_link_trial_session, session_date_from_path
 
 SUFFIX = "" if SPEC.spec_id == "v1" else f"_{SPEC.spec_id}"  # EXP-003 ran on v1; later specs write new files

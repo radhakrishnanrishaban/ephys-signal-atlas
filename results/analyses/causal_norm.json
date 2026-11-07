@@ -1,0 +1,139 @@
+{
+ "question": "Can the per-session normalisation run live, using only past samples, and what does that cost?",
+ "commit": "88513ad",
+ "dirty": false,
+ "spec": "v2",
+ "run_date": "2026-10-26",
+ "sessions": {
+  "n": 30,
+  "first": "20200127",
+  "last": "20210414"
+ },
+ "settings": {
+  "alpha": 0.01,
+  "alpha_smooth": 0.2,
+  "window_bins": 300,
+  "warmup_bins": 300
+ },
+ "causality": {
+  "acausal": false,
+  "causal": true,
+  "causal_window": true,
+  "batch_equals_replay": true
+ },
+ "same_day_r2": {
+  "median_by_seed": {
+   "acausal": {
+    "0": 0.2755,
+    "1": 0.2743,
+    "2": 0.2768
+   },
+   "causal": {
+    "0": 0.2638,
+    "1": 0.2621,
+    "2": 0.263
+   }
+  },
+  "median": {
+   "acausal": 0.2755,
+   "causal": 0.263
+  },
+  "causal_over_acausal": {
+   "value": 0.9547,
+   "ci95": [
+    0.9032,
+    1.0217
+   ],
+   "excludes_zero": true,
+   "n": "30 sessions × 3 seeds"
+  }
+ },
+ "cross_session_r2": {
+  "acausal": {
+   "value": 0.03,
+   "ci95": [
+    -0.0118,
+    0.0789
+   ],
+   "excludes_zero": false,
+   "n": "870 pairs / 30 sessions"
+  },
+  "causal": {
+   "value": 0.0493,
+   "ci95": [
+    0.0082,
+    0.0972
+   ],
+   "excludes_zero": true,
+   "n": "870 pairs / 30 sessions"
+  },
+  "causal_window": {
+   "value": 0.0478,
+   "ci95": [
+    0.0094,
+    0.0931
+   ],
+   "excludes_zero": true,
+   "n": "870 pairs / 30 sessions"
+  }
+ },
+ "differences": {
+  "causal_minus_acausal": {
+   "value": 0.0193,
+   "ci95": [
+    0.0112,
+    0.0268
+   ],
+   "excludes_zero": true,
+   "n": "870 pairs / 30 sessions"
+  },
+  "window_minus_causal": {
+   "value": -0.0015,
+   "ci95": [
+    -0.005,
+    0.0022
+   ],
+   "excludes_zero": false,
+   "n": "870 pairs / 30 sessions"
+  }
+ },
+ "alpha_sweep_day0_decoder": {
+  "mean_r2": {
+   "0.001": 0.0005,
+   "0.003": 0.0168,
+   "0.01": 0.0254,
+   "0.03": 0.0384,
+   "0.1": 0.0018,
+   "0.3": -0.0266
+  },
+  "alpha_0.01_minus_0.003": {
+   "value": 0.0087,
+   "ci95": [
+    0.0062,
+    0.0112
+   ],
+   "excludes_zero": true,
+   "n": "29 later sessions"
+  },
+  "alpha_0.01_minus_0.03": {
+   "value": -0.013,
+   "ci95": [
+    -0.0258,
+    -0.0015
+   ],
+   "excludes_zero": true,
+   "n": "29 later sessions"
+  }
+ },
+ "state_bytes_per_channel": {
+  "causal": 24,
+  "target": 16,
+  "acausal": null
+ },
+ "figure": "causal_norm/pairwise_r2_acausal_vs_causal.png",
+ "cost": {
+  "decoder_macs_per_bin": 576,
+  "decoder_fits": 1446,
+  "runtime_s": 737.2
+ }
+}

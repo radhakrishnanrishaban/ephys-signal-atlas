@@ -33,20 +33,22 @@ print(f"neurosignal v{neurosignal.__version__}")
   src/
     neurosignal/
       io/
-      bronze/
-      silver/
-      gold/
+      features/
+      decoders/
+      align/
+      metrics/
       viz/
-      utils/
 ```
 
-### Subpackages (intended roles)
+### Subpackages, by role
 
-- `neurosignal.io` — NWB readers and related I/O (LINK loaders live here).
-- `neurosignal.bronze` — reserved for raw ingestion (stub for v0.1).
-- `neurosignal.silver` — filtering / artefact / spike-detection API (**stubs**; use `from neurosignal.silver import bandpass_filter` or submodules `silver.filters`, etc.).
-- `neurosignal.gold` — SBP QC, normalization, drift metrics, decoders, and drift plots.
-- `neurosignal.viz` — figure export and registry utilities.
-- `neurosignal.utils` — configuration and validation helpers.
+Dependencies point one way: `features` ← `decoders` ← `metrics` ← `viz`; `align` and `io` stand alone.
 
-Example entrypoints for the drift / decoder notebooks: `neurosignal.io.loaders`, `neurosignal.gold`, `neurosignal.viz`.
+- `neurosignal.io` — LINK NWB loaders and file inspection.
+- `neurosignal.features` — per-session SBP normalisers: acausal `r_norm` (`normalize`, offline reference), the causal streaming normaliser (`causal`), joint SBP + TCR channels for the MLP (`joint`).
+- `neurosignal.decoders` — the one decoder spec every evaluation uses (`linear`: `SPEC`, `make_xy`, `GramRidge`, purged blocked folds), the pooled MLP (`mlp`), the LINK-paper ridge baseline (`baseline`).
+- `neurosignal.align` — cross-session alignment (Procrustes).
+- `neurosignal.metrics` — decoder R² across days and date gaps (`drift`), the session QC screen (`qc`), session-bootstrap CIs (`stats`).
+- `neurosignal.viz` — figure style constants (`style`), export (`fig_export`), drift and MLP plots.
+
+Raw-broadband processing (filters, threshold crossings, SBP) returns as its own subpackage when it is built on the O'Doherty broadband data (D-07); there are no placeholder stubs.

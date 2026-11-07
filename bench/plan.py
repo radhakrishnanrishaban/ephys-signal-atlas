@@ -13,7 +13,7 @@ from typing import Dict, List
 
 import numpy as np
 
-from neurosignal.gold.decoder import DecoderSpec, blocked_folds, grid_offset, n_rows  # noqa: F401
+from neurosignal.decoders.linear import DecoderSpec, blocked_folds, grid_offset, n_rows  # noqa: F401
 
 
 @dataclass(frozen=True)

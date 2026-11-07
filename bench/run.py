@@ -28,7 +28,7 @@ from bench.plan import leaking_plans, plan_scores
 from bench.scoreboard import GAP_BINS, REPO, RESULTS, SCOREBOARD_COLUMNS, SCOREBOARD_CSV, SCOREBOARD_MD, render
 from bench.spec import FEATURE_STATE_BYTES_PER_CH, FEATURES, SPEC, DecoderSpec
 from bench.splits import SPLITS_PATH, load_splits
-from neurosignal.gold.decoder import GramRidge, fit_decoder, session_design
+from neurosignal.decoders.linear import GramRidge, fit_decoder, session_design
 from neurosignal.io.loaders import list_link_nwb_paths, load_link_sessions, session_date_from_path
 
 PAIRS_CSV = RESULTS / "bench_v0_pairs.csv"

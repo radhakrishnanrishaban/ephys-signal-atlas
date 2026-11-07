@@ -16,7 +16,7 @@ from typing import Dict, List
 
 import numpy as np
 
-from neurosignal.gold.drift import compute_day_offsets
+from neurosignal.metrics.drift import compute_day_offsets
 
 SPLITS_PATH = Path(__file__).with_name("splits_v0.json")
 
@@ -45,7 +45,7 @@ def _write_v0() -> None:
     if SPLITS_PATH.exists():
         sys.exit(f"{SPLITS_PATH.name} already exists and is frozen; a new split needs a new file.")
 
-    from neurosignal.gold.drift import filter_sessions_by_bad_dates, qc_sbp_sessions
+    from neurosignal.metrics.qc import filter_sessions_by_bad_dates, qc_sbp_sessions
     from neurosignal.io.loaders import list_link_nwb_paths, load_link_sessions
 
     sbp, vel, dates = load_link_sessions(list_link_nwb_paths())

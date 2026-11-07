@@ -1,0 +1,5 @@
+run_date,commit,phase,counting,add,mul,shift,cmp,sqrt,div,total_per_ch_bin
+2026-10-29,1da6be8,steady,hardware sqrt/div,12,5,9,4,1,1,32
+2026-10-29,1da6be8,steady,expanded sqrt/div,126,5,78,48,0,0,257
+2026-10-29,1da6be8,warmup,hardware sqrt/div,14,4,9,6,1,1,35
+2026-10-29,1da6be8,warmup,expanded sqrt/div,128,4,78,50,0,0,260

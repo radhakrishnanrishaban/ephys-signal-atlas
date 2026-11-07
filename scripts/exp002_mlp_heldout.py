@@ -9,7 +9,7 @@ Splits (D-17), over the 30 sessions of bench/splits_v0.json, by date:
   grouped   5 contiguous date groups of 6 sessions; each held out once, trained on the other 24
   in-sample train and score all 30 (the notebook protocol, kept as the reference for the inflation)
 
-Decoders per fit (gold/nonlinear.fit_pooled_decoders, identical training rows): the MLP,
+Decoders per fit (decoders/mlp.fit_pooled_decoders, identical training rows): the MLP,
 Ridge on the MLP's exact inputs, and on the forward split the SPEC Ridge on SBP r_norm.
 Seeds 0, 1, 2. Writes one row per (split, fold, seed, decoder, session); refuses to write
 with uncommitted changes outside results/, so every row traces to a commit.
@@ -27,9 +27,10 @@ import numpy as np
 from bench.run import git_state
 from bench.scoreboard import REPO, RESULTS
 from bench.splits import load_splits
-from neurosignal.gold.decoder import SPEC
-from neurosignal.gold.drift import compute_day_offsets
-from neurosignal.gold.nonlinear import fit_pooled_decoders, joint_features, score_pooled
+from neurosignal.decoders.linear import SPEC
+from neurosignal.metrics.drift import compute_day_offsets
+from neurosignal.decoders.mlp import fit_pooled_decoders, score_pooled
+from neurosignal.features.joint import joint_features
 from neurosignal.io.loaders import list_link_nwb_paths, load_link_sessions, session_date_from_path
 
 OUT_CSV = RESULTS / ("exp002_mlp_heldout.csv" if SPEC.spec_id == "v1" else f"exp002_mlp_heldout_{SPEC.spec_id}.csv")

@@ -1,0 +1,43 @@
+run_date,commit,id,quantity,value,ci_lo,ci_hi,n
+2026-10-29,1da6be8,E1-max,"max, scored bins",0.000841474,,,77174496 bin × channel
+2026-10-29,1da6be8,E1-mean,"mean, scored bins",8.32695e-05,,,77174496 bin × channel
+2026-10-29,1da6be8,E1-p9999,"99.99th percentile, scored bins",0.000463312,,,77174496 bin × channel
+2026-10-29,1da6be8,E1-max-all,"max, warm-up included",1.00047,,,78038496 bin × channel
+2026-10-29,1da6be8,E1-mean-all,"mean, warm-up included",8.33997e-05,,,78038496 bin × channel
+2026-10-29,1da6be8,E1-lsb,"output LSB, 2^-12",0.000244141,,,
+2026-10-29,1da6be8,E2-saturated,saturation events in the normaliser (other than the ±6 clip),0,,,
+2026-10-29,1da6be8,E2-input-saturated,input samples saturated converting to Q16.16,0,,,
+2026-10-29,1da6be8,E2-clip-q,"clip rate, fixed point (scored bins at ±6)",0.000256704,,,77174496 bin × channel
+2026-10-29,1da6be8,E2-clip-f,"clip rate, float reference",0.000256691,,,77174496 bin × channel
+2026-10-29,1da6be8,K1-q,"same-day median, q",0.262987,,,30 sessions
+2026-10-29,1da6be8,K1-f,"same-day median, f",0.262986,,,30 sessions
+2026-10-29,1da6be8,K1-q-f,"same-day, q − f (mean of paired differences)",2.9761e-07,-1.25079e-07,7.23653e-07,30 sessions
+2026-10-29,1da6be8,K2-q,"cross-session mean, q",0.0201119,-0.0342274,0.0813348,435 pairs / 30 sessions
+2026-10-29,1da6be8,K2-f,"cross-session mean, f",0.0201122,-0.0342273,0.0813351,435 pairs / 30 sessions
+2026-10-29,1da6be8,K2-q-f,"cross-session, q − f",-2.39469e-07,-1.55908e-06,1.05142e-06,435 pairs / 30 sessions
+2026-10-29,1da6be8,K2-q-f-maxabs,largest |q − f| over the pairs,2.03609e-05,,,435 pairs / 30 sessions
+2026-10-29,1da6be8,K3-q,"CFD days, q (CI 42–82, seeds 52–52)",52,,,435 pairs / 30 sessions
+2026-10-29,1da6be8,K3-q-same,"bench same-day median, q",0.263049,,,
+2026-10-29,1da6be8,K3-f,"CFD days, f (CI 42–82, seeds 52–52)",52,,,435 pairs / 30 sessions
+2026-10-29,1da6be8,K3-f-same,"bench same-day median, f",0.263048,,,
+2026-10-29,1da6be8,causal,"future-perturbation check passes, fixed point (1 = yes)",1,,,
+2026-10-29,1da6be8,C1-bitwise-equal,"digit-by-digit sqrt and division equal the fast paths, session 1 (1 = yes)",1,,,2654304 bin × channel
+2026-10-29,1da6be8,C1-shared-div,"shared divisions per warm-up bin (1/n, all channels)",1,,,
+2026-10-29,1da6be8,C1-state,"state bytes per channel (μ, var, y as 32-bit)",12,,,
+2026-10-29,1da6be8,C1-norm-ch-hw,"normaliser ops per channel per bin, steady, sqrt and div = 1 op",32,,,
+2026-10-29,1da6be8,C1-norm-ch-ex,"normaliser ops per channel per bin, steady, sqrt and div expanded",257,,,
+2026-10-29,1da6be8,C1-sqrtdiv-share,share of sqrt and div steps in the expanded count,0.891051,,,
+2026-10-29,1da6be8,C1-96-hw-bin,"96 ch, sqrt/div = 1 op: normaliser + decoder ops per bin",4224,,,decoder 576 MACs = 1152 ops; budget 100000
+2026-10-29,1da6be8,C1-96-hw-s,"96 ch, sqrt/div = 1 op: ops per second at 50 Hz",211200,,,
+2026-10-29,1da6be8,C1-96-ex-bin,"96 ch, sqrt/div expanded: normaliser + decoder ops per bin",25824,,,decoder 576 MACs = 1152 ops; budget 100000
+2026-10-29,1da6be8,C1-96-ex-s,"96 ch, sqrt/div expanded: ops per second at 50 Hz",1.2912e+06,,,
+2026-10-29,1da6be8,C1-96-sqrt-div-s,96 ch: sqrt and divisions per second (each),4800,,,
+2026-10-29,1da6be8,C1-96-state,96 ch: normaliser state bytes,1152,,,
+2026-10-29,1da6be8,C1-96-weights,"96 ch: decoder coefficients (float64, not converted)",577,,,
+2026-10-29,1da6be8,C1-1024-hw-bin,"1024 ch, sqrt/div = 1 op: normaliser + decoder ops per bin",45056,,,decoder 6144 MACs = 12288 ops; budget 100000
+2026-10-29,1da6be8,C1-1024-hw-s,"1024 ch, sqrt/div = 1 op: ops per second at 50 Hz",2.2528e+06,,,
+2026-10-29,1da6be8,C1-1024-ex-bin,"1024 ch, sqrt/div expanded: normaliser + decoder ops per bin",275456,,,decoder 6144 MACs = 12288 ops; budget 100000
+2026-10-29,1da6be8,C1-1024-ex-s,"1024 ch, sqrt/div expanded: ops per second at 50 Hz",1.37728e+07,,,
+2026-10-29,1da6be8,C1-1024-sqrt-div-s,1024 ch: sqrt and divisions per second (each),51200,,,
+2026-10-29,1da6be8,C1-1024-state,1024 ch: normaliser state bytes,12288,,,
+2026-10-29,1da6be8,C1-1024-weights,"1024 ch: decoder coefficients (float64, not converted)",6145,,,

@@ -3,7 +3,7 @@
 A Python analysis package for drift-robust feature engineering from chronic extracellular electrophysiology recordings.
 
 ![Kept share of same-day decoder R² against calibration→test gap, raw SBP and causal r_norm (spec v2)](results/kept_ratio_vs_gap_v2.png)
-> **Latest result ([scoreboard](results/SCOREBOARD.md), commit `58415f8`, decoder spec v2):** a frozen decoder on causal (online) per-session normalization keeps at least half of its held-out same-day R² for **52 days (95 % CI 42–82)**; on raw SBP, for 0 days (CI 0–6). Beyond a month the median pair keeps nothing. Short gaps come mostly from Jan–Mar 2020, so gap and recording period are partly confounded. Lab notes: [2026-W43](results/notes/2026-W43.md), [2026-W43 (2)](results/notes/2026-W43-2.md).
+> **Latest result ([scoreboard](results/SCOREBOARD.md), commit `1554f00`, decoder spec v2):** a frozen decoder on causal (online) per-session normalization keeps at least half of its held-out same-day R² for **52 days (95 % CI 42–82)**; on raw SBP, for 0 days (CI 0–6). The int32 fixed-point normaliser gives the same 52 days with 12 bytes of state per channel. Beyond a month the median pair keeps nothing. Short gaps come mostly from Jan–Mar 2020, so gap and recording period are partly confounded. Lab notes: [2026-W43](results/notes/2026-W43.md), [2026-W43 (2)](results/notes/2026-W43-2.md), [2026-W45](results/notes/2026-W45.md).
 
 Every number on the [scoreboard](results/SCOREBOARD.md) is held out, from 3 seeds, with a 95 % CI and compute cost, and comes from one command (`python -m bench.run`, needs the LINK sessions in `01_data/`). Numbers below marked *notebook* are single runs on the same decoder spec as the scoreboard (spec v2: Ridge on SBP at bins t−5…t → finger velocity at bin t, warm-up unscored); their 95 % CIs (session bootstrap) come from [`results/exp003_cis_v2.csv`](results/exp003_cis_v2.csv). On the LINK paper's own split this decoder matches the authors' ridge baseline (index velocity R² 0.252 vs 0.246, paired +0.005, CI −0.001 to +0.008).
 
@@ -52,11 +52,14 @@ The pipeline follows a medallion architecture (Bronze → Silver → Gold):
 02_package/       neurosignal Python package
   src/neurosignal/
     io/           NWB loaders and session inspection
-    silver/       filters, artefact detection, spike detection (stubs)
-    gold/         drift analysis, feature normalization, decoder training
-    viz/          figure export utilities
-03_notebooks/     Analysis notebooks (thin wrappers over the package)
+    features/     per-session normalisers: acausal r_norm, causal (streaming), joint SBP + TCR
+    decoders/     the decoder spec (Ridge), pooled MLP, LINK-paper baseline
+    align/        cross-session alignment (Procrustes)
+    metrics/      decoder R² across days, session QC, session-bootstrap CIs
+    viz/          figure style, export and plots
+03_notebooks/     v1 notebooks: frozen exploratory record (see 03_notebooks/README.md)
 04_output/        Generated figures and supporting outputs
+analyses/         One script per research question → results/analyses/<question>.{json,md}
 bench/            Evaluation harness: frozen splits, one decoder spec, CFD with CI (python -m bench.run)
 results/          Scoreboard (source: scoreboard.csv) and weekly lab notes
 ```
