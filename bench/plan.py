@@ -33,29 +33,33 @@ def row_bins(rows: np.ndarray, spec: DecoderSpec) -> np.ndarray:
     return np.unique(spans)
 
 
+def session_plans(date: str, bins: int, spec: DecoderSpec, seed: int = 0) -> List[ScorePlan]:
+    """Same-day plans of one session: blocked folds on the grid this seed shifts to (the CFD denominator)."""
+    rows = n_rows(bins, spec)
+    return [
+        ScorePlan("same_day", date, date, k, train, test)
+        for k, (train, test) in enumerate(blocked_folds(rows, spec, grid_offset(rows, seed, spec)))
+    ]
+
+
+def cross_plan(cal: str, test: str, all_rows: Dict[str, np.ndarray]) -> ScorePlan:
+    """Fit on the whole calibration session, test on the whole later session; seed-independent."""
+    return ScorePlan("cross_day", cal, test, -1, all_rows[cal], all_rows[test])
+
+
 def plan_scores(splits: Dict, session_bins: Dict[str, int], spec: DecoderSpec, seed: int = 0) -> List[ScorePlan]:
     """
     Same-day scores: blocked folds within each calibration session (the CFD denominator),
     on the grid this seed shifts to. Cross-day scores: fit on the whole calibration session,
     test on the whole later session; they do not depend on the seed.
-    session_bins maps date -> bins left after the warm-up trim.
+    session_bins maps date -> bins left after the warm-up trim. Cross-day plans share one
+    row array per session, so memory grows with sessions, not pairs.
     """
     plans: List[ScorePlan] = []
     for date in splits["sessions"]:
-        rows = n_rows(session_bins[date], spec)
-        for k, (train, test) in enumerate(blocked_folds(rows, spec, grid_offset(rows, seed, spec))):
-            plans.append(ScorePlan("same_day", date, date, k, train, test))
-    for pair in splits["pairs"]:
-        plans.append(
-            ScorePlan(
-                "cross_day",
-                pair["cal"],
-                pair["test"],
-                -1,
-                np.arange(n_rows(session_bins[pair["cal"]], spec)),
-                np.arange(n_rows(session_bins[pair["test"]], spec)),
-            )
-        )
+        plans += session_plans(date, session_bins[date], spec, seed)
+    all_rows = {d: np.arange(n_rows(session_bins[d], spec)) for d in splits["sessions"]}
+    plans += [cross_plan(pair["cal"], pair["test"], all_rows) for pair in splits["pairs"]]
     return plans
 
 

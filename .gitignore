@@ -37,3 +37,5 @@ internal/
 
 # Agent rules (private; imports internal/CLAUDE.md)
 CLAUDE.md
+01_data/**/*.npz
+01_data/**/.part/

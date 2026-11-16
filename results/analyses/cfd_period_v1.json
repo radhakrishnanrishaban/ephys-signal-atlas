@@ -1,0 +1,399 @@
+{
+ "question": "Does calibration-free days measure the gap between sessions, or the recording period?",
+ "commit": "baaa8f6",
+ "dirty": false,
+ "spec": "v2",
+ "run_date": "2026-11-08",
+ "splits": "v1",
+ "bench_commit": "c480799",
+ "sessions": 74,
+ "pairs": 2701,
+ "settings": {
+  "gap_bins": {
+   "1-7 d": [
+    1,
+    7
+   ],
+   "8-30 d": [
+    8,
+    30
+   ],
+   "31-52 d": [
+    31,
+    52
+   ]
+  },
+  "early": [
+   "2020"
+  ],
+  "late": [
+   "2021",
+   "2022",
+   "2023"
+  ],
+  "min_pairs": 15,
+  "margin": 0.1,
+  "n_boot": 2000,
+  "seeds": [
+   0,
+   1,
+   2
+  ],
+  "kept_threshold": 0.5
+ },
+ "cfd": {
+  "raw_sbp": {
+   "cfd_days": "0",
+   "cfd_ci95_lo": "0",
+   "cfd_ci95_hi": "6",
+   "cfd_seed_min": "0",
+   "cfd_seed_max": "0"
+  },
+  "r_norm_causal": {
+   "cfd_days": "25",
+   "cfd_ci95_lo": "11",
+   "cfd_ci95_hi": "52",
+   "cfd_seed_min": "25",
+   "cfd_seed_max": "25"
+  },
+  "r_norm_causal_q": {
+   "cfd_days": "25",
+   "cfd_ci95_lo": "11",
+   "cfd_ci95_hi": "52",
+   "cfd_seed_min": "25",
+   "cfd_seed_max": "25"
+  }
+ },
+ "by_feature": {
+  "r_norm_causal": {
+   "cells": {
+    "1-7 d": {
+     "2020": {
+      "pairs": 22,
+      "median_kept": 0.8193
+     },
+     "2021": {
+      "pairs": 3,
+      "median_kept": null
+     },
+     "2022": {
+      "pairs": 0,
+      "median_kept": null
+     },
+     "2023": {
+      "pairs": 0,
+      "median_kept": null
+     }
+    },
+    "8-30 d": {
+     "2020": {
+      "pairs": 60,
+      "median_kept": 0.813
+     },
+     "2021": {
+      "pairs": 45,
+      "median_kept": 0.3737
+     },
+     "2022": {
+      "pairs": 24,
+      "median_kept": 0.5084
+     },
+     "2023": {
+      "pairs": 11,
+      "median_kept": null
+     }
+    },
+    "31-52 d": {
+     "2020": {
+      "pairs": 31,
+      "median_kept": 0.7371
+     },
+     "2021": {
+      "pairs": 39,
+      "median_kept": 0.1676
+     },
+     "2022": {
+      "pairs": 21,
+      "median_kept": 0.4231
+     },
+     "2023": {
+      "pairs": 8,
+      "median_kept": null
+     }
+    }
+   },
+   "early_minus_late": {
+    "1-7 d": {
+     "too_few": true,
+     "pairs": [
+      22,
+      3
+     ]
+    },
+    "8-30 d": {
+     "value": 0.389,
+     "ci95": [
+      0.0723,
+      0.6276
+     ],
+     "excludes_zero": true,
+     "n": "60 vs 80 pairs × 3 seeds",
+     "reading": "period"
+    },
+    "31-52 d": {
+     "value": 0.4213,
+     "ci95": [
+      0.1463,
+      0.7199
+     ],
+     "excludes_zero": true,
+     "n": "31 vs 68 pairs × 3 seeds",
+     "reading": "period"
+    }
+   },
+   "late_only_cfd": {
+    "cfd_days": 14,
+    "ci95": [
+     0,
+     24
+    ],
+    "seed_points": [
+     14,
+     14,
+     14
+    ],
+    "pairs": 1326
+   },
+   "style": {
+    "same_style_early_minus_late": {
+     "1-7 d": {
+      "too_few": true,
+      "pairs": [
+       17,
+       1
+      ]
+     },
+     "8-30 d": {
+      "value": 0.204,
+      "ci95": [
+       -0.0994,
+       0.5606
+      ],
+      "excludes_zero": false,
+      "n": "35 vs 49 pairs × 3 seeds",
+      "reading": "inconclusive"
+     },
+     "31-52 d": {
+      "too_few": true,
+      "pairs": [
+       1,
+       41
+      ]
+     }
+    },
+    "same_minus_cross": {
+     "1-7 d": {
+      "too_few": true,
+      "pairs": [
+       18,
+       7
+      ]
+     },
+     "8-30 d": {
+      "value": -0.0233,
+      "ci95": [
+       -0.3858,
+       0.3354
+      ],
+      "excludes_zero": false,
+      "n": "84 vs 56 pairs × 3 seeds"
+     },
+     "31-52 d": {
+      "value": -0.144,
+      "ci95": [
+       -0.4715,
+       0.3487
+      ],
+      "excludes_zero": false,
+      "n": "42 vs 57 pairs × 3 seeds"
+     }
+    },
+    "sessions": {
+     "CO": 39,
+     "RD": 35
+    }
+   }
+  },
+  "raw_sbp": {
+   "cells": {
+    "1-7 d": {
+     "2020": {
+      "pairs": 22,
+      "median_kept": 0.1954
+     },
+     "2021": {
+      "pairs": 3,
+      "median_kept": null
+     },
+     "2022": {
+      "pairs": 0,
+      "median_kept": null
+     },
+     "2023": {
+      "pairs": 0,
+      "median_kept": null
+     }
+    },
+    "8-30 d": {
+     "2020": {
+      "pairs": 60,
+      "median_kept": 0.1451
+     },
+     "2021": {
+      "pairs": 45,
+      "median_kept": 0.0
+     },
+     "2022": {
+      "pairs": 24,
+      "median_kept": 0.0
+     },
+     "2023": {
+      "pairs": 11,
+      "median_kept": null
+     }
+    },
+    "31-52 d": {
+     "2020": {
+      "pairs": 31,
+      "median_kept": 0.1476
+     },
+     "2021": {
+      "pairs": 39,
+      "median_kept": 0.0
+     },
+     "2022": {
+      "pairs": 21,
+      "median_kept": 0.0
+     },
+     "2023": {
+      "pairs": 8,
+      "median_kept": null
+     }
+    }
+   },
+   "early_minus_late": {
+    "1-7 d": {
+     "too_few": true,
+     "pairs": [
+      22,
+      3
+     ]
+    },
+    "8-30 d": {
+     "value": 0.1451,
+     "ci95": [
+      0.0,
+      0.5634
+     ],
+     "excludes_zero": false,
+     "n": "60 vs 80 pairs × 3 seeds",
+     "reading": "inconclusive"
+    },
+    "31-52 d": {
+     "value": 0.1476,
+     "ci95": [
+      0.0,
+      0.5873
+     ],
+     "excludes_zero": false,
+     "n": "31 vs 68 pairs × 3 seeds",
+     "reading": "inconclusive"
+    }
+   },
+   "late_only_cfd": {
+    "cfd_days": 0,
+    "ci95": [
+     0,
+     0
+    ],
+    "seed_points": [
+     0,
+     0,
+     0
+    ],
+    "pairs": 1326
+   },
+   "style": {
+    "same_style_early_minus_late": {
+     "1-7 d": {
+      "too_few": true,
+      "pairs": [
+       17,
+       1
+      ]
+     },
+     "8-30 d": {
+      "value": 0.1101,
+      "ci95": [
+       -0.0123,
+       0.5634
+      ],
+      "excludes_zero": false,
+      "n": "35 vs 49 pairs × 3 seeds",
+      "reading": "inconclusive"
+     },
+     "31-52 d": {
+      "too_few": true,
+      "pairs": [
+       1,
+       41
+      ]
+     }
+    },
+    "same_minus_cross": {
+     "1-7 d": {
+      "too_few": true,
+      "pairs": [
+       18,
+       7
+      ]
+     },
+     "8-30 d": {
+      "value": 0.0,
+      "ci95": [
+       -0.3906,
+       0.1591
+      ],
+      "excludes_zero": false,
+      "n": "84 vs 56 pairs × 3 seeds"
+     },
+     "31-52 d": {
+      "value": 0.0,
+      "ci95": [
+       -0.1817,
+       0.0
+      ],
+      "excludes_zero": false,
+      "n": "42 vs 57 pairs × 3 seeds"
+     }
+    },
+    "sessions": {
+     "CO": 39,
+     "RD": 35
+    }
+   }
+  }
+ },
+ "exp008": {
+  "P1 causal CFD < 52 d": true,
+  "P2 period effect at 8-30 d and 31-52 d": true,
+  "P3 raw CFD ≤ 7 d": true,
+  "P4 fixed-point and float CFD within 1 d": true
+ },
+ "verdict": "period effect",
+ "figure": "cfd_period/kept_by_year_v1.png",
+ "cost": {
+  "decoder_fits": 0,
+  "runtime_s": 2.6
+ }
+}

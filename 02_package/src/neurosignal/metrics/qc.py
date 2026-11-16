@@ -158,15 +158,23 @@ def qc_sbp_sessions(
             }
         )
 
-    df = pd.DataFrame(rows)
+    return flag_qc_outliers(pd.DataFrame(rows), z_thresh)
 
-    df["z_frac_active"] = _robust_z(df["frac_active"].to_numpy())
-    df["z_r2_intra_raw"] = _robust_z(df["r2_intra_raw"].to_numpy())
-    df["z_pop_raw_std"] = _robust_z(df["pop_raw_std"].to_numpy())
 
-    z_cols = ["z_frac_active", "z_r2_intra_raw", "z_pop_raw_std"]
+QC_Z_METRICS = ("frac_active", "r2_intra_raw", "pop_raw_std")
+
+
+def flag_qc_outliers(df: pd.DataFrame, z_thresh: float = 3.5) -> Tuple[pd.DataFrame, List[str]]:
+    """
+    Robust z-scores of QC_Z_METRICS across all sessions in df, and the sessions with any |z| > z_thresh.
+    Split out of qc_sbp_sessions so per-session metrics can be computed one session at a time
+    (qc_sbp_sessions on a one-session list) and flagged together afterwards: same result.
+    """
+    df = df.reset_index(drop=True).copy()
+    for m in QC_Z_METRICS:
+        df[f"z_{m}"] = _robust_z(df[m].to_numpy())
+    z_cols = [f"z_{m}" for m in QC_Z_METRICS]
     df["is_qc_outlier"] = (df[z_cols].abs() > float(z_thresh)).any(axis=1)
-
     bad_dates = df.loc[df["is_qc_outlier"], "date"].astype(str).tolist()
     return df, bad_dates
 

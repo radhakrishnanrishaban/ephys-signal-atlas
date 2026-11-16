@@ -1,9 +1,10 @@
 """
 Figure for the lab note: kept ratio vs calibration→test gap, with the isotonic fit CFD reads
-and the 50 % line, one panel per causal feature. Data: results/bench_v0_pairs.csv (seed 0) and
+and the 50 % line, one panel per causal feature. Data: results/bench_<splits>_pairs.csv (seed 0) and
 the matching results/scoreboard.csv row for CFD and its CI. Nothing here is typed by hand (D-08).
 
     python -m bench.figures results/notes/2026-W43_kept_ratio_vs_gap.png
+    python -m bench.figures --splits v1 results/kept_ratio_vs_gap_v1.png
 """
 
 from __future__ import annotations
@@ -24,7 +25,6 @@ from bench.scoreboard import REPO, RESULTS, SCOREBOARD_CSV
 from bench.spec import SPEC
 from neurosignal.viz.style import AXIS_LABEL_FONTSIZE, LEGEND_FONTSIZE, TITLE_FONTSIZE
 
-PAIRS_CSV = RESULTS / "bench_v0_pairs.csv"
 PANELS = {"raw_sbp": ("Raw SBP", "#2a78d6"), "r_norm_causal": ("Causal r_norm", "#eb6834")}  # validated pair
 INK, MUTED, GRID = "#1f1f1e", "#6b6a64", "#e4e3de"
 
@@ -34,10 +34,10 @@ def _rows(path: Path) -> list:
         return list(csv.DictReader(fh))
 
 
-def plot(out: Path, seed: int = SPEC.seeds[0]) -> None:
-    pairs = _rows(PAIRS_CSV)
+def plot(out: Path, splits: str = "v0", seed: int = SPEC.seeds[0]) -> None:
+    pairs = _rows(RESULTS / f"bench_{splits}_pairs.csv")
     commit = pairs[0]["commit"]
-    board = {r["feature"]: r for r in _rows(SCOREBOARD_CSV) if r["commit"] == commit}
+    board = {r["feature"]: r for r in _rows(SCOREBOARD_CSV) if r["commit"] == commit and r["splits"] == splits}
 
     fig, axes = plt.subplots(1, len(PANELS), figsize=(11, 4.8), sharey=True)
     for ax, (feature, (label, color)) in zip(axes, PANELS.items()):
@@ -80,8 +80,8 @@ def plot(out: Path, seed: int = SPEC.seeds[0]) -> None:
     fig.legend(handles=handles, loc="lower center", ncol=3, fontsize=LEGEND_FONTSIZE, framealpha=0.75,
                bbox_to_anchor=(0.5, 0.04))
     fig.text(
-        0.01, 0.005, f"bench v0 · commit {commit} · seed {seed} of {len(SPEC.seeds)} · "
-        f"{len(rows)} forward pairs, 30 LINK sessions",
+        0.01, 0.005, f"bench {splits} · commit {commit} · seed {seed} of {len(SPEC.seeds)} · "
+        f"{len(rows)} forward pairs, {len({r['cal'] for r in rows} | {r['test'] for r in rows})} LINK sessions",
         fontsize=8, color=MUTED,
     )
     fig.tight_layout(rect=(0, 0.12, 1, 1))
@@ -93,4 +93,6 @@ def plot(out: Path, seed: int = SPEC.seeds[0]) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("out", type=Path)
-    plot(parser.parse_args().out.resolve())
+    parser.add_argument("--splits", default="v0")
+    args = parser.parse_args()
+    plot(args.out.resolve(), splits=args.splits)

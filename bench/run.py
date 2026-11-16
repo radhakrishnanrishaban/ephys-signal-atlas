@@ -1,11 +1,13 @@
 """
 Score every feature set on the frozen splits and write the scoreboard.
 
-    python -m bench.run              # writes results/ (refuses on uncommitted changes outside results/)
-    python -m bench.run --dry-run    # prints only
+    python -m bench.run                  # splits v0; writes results/ (refuses on uncommitted changes outside results/)
+    python -m bench.run --splits v1      # another frozen split (D-22)
+    python -m bench.run --dry-run        # prints only
 
-Writes results/scoreboard.csv (one row per commit × spec × feature; the source of truth),
-results/SCOREBOARD.md (rendered from the CSV) and results/bench_v0_pairs.csv (every pair × seed).
+Writes results/scoreboard.csv (one row per commit × spec × splits × feature; the source of truth),
+results/SCOREBOARD.md (rendered from the CSV) and results/bench_<splits>_pairs.csv (every pair × seed).
+Sessions are scored one at a time in date order (score_streaming), so memory does not grow with the split.
 Nothing is written unless every guardrail passes (D-13): no plan shares a bin between training
 and test, ≥ 3 seeds, cost columns filled. CFD and its CI are written only for causal features.
 """
@@ -16,22 +18,30 @@ import argparse
 import csv
 import subprocess
 import time
+from collections import defaultdict
 from datetime import date
-from typing import Dict, List
+from pathlib import Path
+from typing import Callable, Dict, List
 
 import numpy as np
 from sklearn.metrics import r2_score
 
 from bench.cfd import cfd_bootstrap, cfd_days, kept_ratio
 from bench.guards import is_causal
-from bench.plan import leaking_plans, plan_scores
+from bench.plan import cross_plan, leaking_plans, plan_scores, session_plans
 from bench.scoreboard import GAP_BINS, REPO, RESULTS, SCOREBOARD_COLUMNS, SCOREBOARD_CSV, SCOREBOARD_MD, render
 from bench.spec import FEATURE_STATE_BYTES_PER_CH, FEATURES, SPEC, DecoderSpec
-from bench.splits import SPLITS_PATH, load_splits
-from neurosignal.decoders.linear import GramRidge, fit_decoder, session_design
-from neurosignal.io.loaders import list_link_nwb_paths, load_link_sessions, session_date_from_path
+from bench.splits import load_splits, splits_path
+from neurosignal.decoders.linear import GramRidge, fit_decoder, n_rows, session_design
+from neurosignal.io.loaders import list_link_session_paths, load_link_sessions
 
-PAIRS_CSV = RESULTS / "bench_v0_pairs.csv"
+
+
+def pairs_csv(version: str) -> Path:
+    return RESULTS / f"bench_{version}_pairs.csv"
+
+
+PAIRS_CSV = pairs_csv("v0")
 MONTH_PLUS_DAYS = 30
 COST_COLUMNS = ("decoder_macs_per_bin", "fits", "runtime_s")
 MIN_SEEDS = 3
@@ -46,12 +56,19 @@ def git_state() -> tuple:
     return sha.stdout.strip(), bool(dirty.stdout.strip())
 
 
-def load_frozen_sessions(splits: Dict) -> tuple:
-    by_date = {session_date_from_path(p): p for p in list_link_nwb_paths()}
+def session_paths(splits: Dict) -> Dict[str, Path]:
+    """Path (NWB or extracted .npz) of every session in the split; stops if any is missing from the data dir."""
+    by_date = list_link_session_paths()
     missing = [d for d in splits["sessions"] if d not in by_date]
     if missing:
-        raise SystemExit(f"sessions in {SPLITS_PATH.name} missing from the data dir: {missing}")
-    sbp, vel, dates = load_link_sessions([by_date[d] for d in splits["sessions"]])
+        raise SystemExit(f"sessions in splits {splits['version']} missing from the data dir: {missing}")
+    return {d: by_date[d] for d in splits["sessions"]}
+
+
+def load_frozen_sessions(splits: Dict) -> tuple:
+    """Every session of the split in memory at once (fine for v0; the bench itself uses score_streaming)."""
+    paths = session_paths(splits)
+    sbp, vel, dates = load_link_sessions([paths[d] for d in splits["sessions"]])
     assert dates == splits["sessions"]
     return sbp, vel
 
@@ -86,6 +103,51 @@ def score_same_day(design: Dict, plans: List, spec: DecoderSpec) -> Dict[str, fl
         model = fit_decoder(X[p.train_rows], y[p.train_rows], spec)
         same.setdefault(p.cal, []).append(r2_score(y[p.test_rows], model.predict(X[p.test_rows])))
     return {d: float(np.mean(v)) for d, v in same.items()}
+
+
+def score_streaming(features: Dict[str, Callable], paths: Dict[str, Path], splits: Dict, spec: DecoderSpec) -> Dict:
+    """
+    Score every feature in one pass over the sessions in date order, with one session's data and
+    design matrix in memory at a time. Gives the same numbers as designs + score_cross_day +
+    score_same_day: every feature is computed per session (state resets each session, D-04), a
+    cross-day model is fitted on the whole calibration session, and every pair's calibration session
+    comes earlier in date order, so its model exists when the test session is reached.
+    Each session's plans pass the leakage gate before anything is scored on them (D-13).
+    Returns per feature: cross {(cal, test): R²}, same {seed: {date: R²}}, fits, seconds.
+    """
+    allowed = {(p["cal"], p["test"]) for p in splits["pairs"]}
+    cals_of = defaultdict(list)
+    for p in splits["pairs"]:
+        cals_of[p["test"]].append(p["cal"])
+    is_cal = {p["cal"] for p in splits["pairs"]}
+    out = {name: {"cross": {}, "same": {s: {} for s in spec.seeds}, "fits": 0, "seconds": 0.0} for name in features}
+    models: Dict[str, Dict[str, GramRidge]] = {name: {} for name in features}
+    all_rows: Dict[str, np.ndarray] = {}
+    for i, d in enumerate(splits["sessions"]):
+        sbp, vel, _ = load_link_sessions([paths[d]])
+        for name, make in features.items():
+            t0 = time.time()
+            X, y, bins = session_design(make(sbp)[0], vel[0], spec)
+            all_rows.setdefault(d, np.arange(n_rows(bins, spec)))
+            same = {seed: session_plans(d, bins, spec, seed) for seed in spec.seeds}
+            cross = [cross_plan(c, d, all_rows) for c in cals_of[d]]
+            leaks = leaking_plans([p for ps in same.values() for p in ps] + cross, spec, allowed)
+            if leaks:
+                raise SystemExit(f"{name}: {len(leaks)} plans train on what they test, nothing written: {leaks[:3]}")
+            for seed, plans in same.items():
+                r2 = [r2_score(y[p.test_rows], fit_decoder(X[p.train_rows], y[p.train_rows], spec).predict(X[p.test_rows]))
+                      for p in plans]
+                out[name]["same"][seed][d] = float(np.mean(r2))
+                out[name]["fits"] += len(plans)
+            for p in cross:
+                out[name]["cross"][(p.cal, p.test)] = r2_score(y[p.test_rows], models[name][p.cal].predict(X[p.test_rows]))
+            if d in is_cal:
+                models[name][d] = fit_decoder(X[all_rows[d]], y[all_rows[d]], spec)
+                out[name]["fits"] += 1
+            out[name]["seconds"] += time.time() - t0
+        print(f"  session {i + 1}/{len(splits['sessions'])} {d}", end="\r", flush=True)
+    print()
+    return out
 
 
 def summarise(r2_same: Dict, cross: Dict, splits: Dict, spec: DecoderSpec, causal: bool, seed: int) -> tuple:
@@ -147,11 +209,11 @@ def _fmt(v) -> str:
 
 def write_results(results: Dict, pair_rows: Dict, commit: str, spec: DecoderSpec, splits: Dict) -> None:
     RESULTS.mkdir(exist_ok=True)
-    key = (commit, spec.spec_id)
+    key = (commit, spec.spec_id, splits["version"])
     old = []
     if SCOREBOARD_CSV.exists():
         with SCOREBOARD_CSV.open() as fh:
-            old = [r for r in csv.DictReader(fh) if (r["commit"], r["spec"]) != key]
+            old = [r for r in csv.DictReader(fh) if (r["commit"], r["spec"], r["splits"] or "v0") != key]
     new = [
         {"run_date": date.today().isoformat(), "commit": commit, "spec": spec.spec_id,
          "splits": splits["version"], "feature": name, **{k: _fmt(v) for k, v in s.items()}}
@@ -162,7 +224,7 @@ def write_results(results: Dict, pair_rows: Dict, commit: str, spec: DecoderSpec
         w.writeheader()
         w.writerows(old + new)
 
-    with PAIRS_CSV.open("w", newline="") as fh:
+    with pairs_csv(splits["version"]).open("w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=["commit", "spec", "feature", "seed", "cal", "test", "gap_days",
                                            "r2_same_cal", "r2_cross", "kept_ratio"])
         w.writeheader()
@@ -176,47 +238,42 @@ def write_results(results: Dict, pair_rows: Dict, commit: str, spec: DecoderSpec
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--dry-run", action="store_true", help="score and print; write nothing")
+    parser.add_argument("--splits", default="v0", help="frozen split version: bench/splits_<version>.json")
     args = parser.parse_args()
 
     commit, dirty = git_state()
-    splits = load_splits()
+    splits = load_splits(splits_path(args.splits))
+    if splits["version"] != args.splits:
+        raise SystemExit(f"splits_{args.splits}.json says version {splits['version']}")
+    paths = session_paths(splits)
+    print(f"splits {splits['version']}: {len(splits['sessions'])} sessions, {len(splits['pairs'])} pairs · "
+          f"commit {commit}{' (dirty)' if dirty else ''}")
+
+    causal = {name: is_causal(make) for name, make in FEATURES.items()}
     t0 = time.time()
-    sbp, vel = load_frozen_sessions(splits)
-    print(f"loaded {len(sbp)} sessions in {time.time() - t0:.0f} s · commit {commit}{' (dirty)' if dirty else ''}")
+    scores = score_streaming(FEATURES, paths, splits, SPEC)
+    print(f"scored in {time.time() - t0:.0f} s")
 
     results, pair_rows = {}, {}
-    allowed = {(p["cal"], p["test"]) for p in splits["pairs"]}
-    for name, make in FEATURES.items():
+    for name in FEATURES:
         t1 = time.time()
-        causal = is_causal(make)
-        design = designs(make(sbp), vel, splits["sessions"], SPEC)
-        bins = {d: b for d, (_, _, b) in design.items()}
-        plans = {seed: plan_scores(splits, bins, SPEC, seed) for seed in SPEC.seeds}
-        leaks = [msg for seed_plans in plans.values() for msg in leaking_plans(seed_plans, SPEC, allowed)]
-        if leaks:
-            raise SystemExit(f"{name}: {len(leaks)} plans train on what they test, nothing written: {leaks[:3]}")
-
-        cross = score_cross_day(design, plans[SPEC.seeds[0]], SPEC)  # the same for every seed
+        sc = scores[name]
         per_seed, boots, rows = [], [], []
         for seed in SPEC.seeds:
-            summary, boot, seed_rows = summarise(score_same_day(design, plans[seed], SPEC), cross, splits, SPEC, causal, seed)
+            summary, boot, seed_rows = summarise(sc["same"][seed], sc["cross"], splits, SPEC, causal[name], seed)
             per_seed.append(summary)
             boots.append(boot)
             rows += seed_rows
-        fits = len({p.cal for p in plans[SPEC.seeds[0]] if p.kind == "cross_day"}) + sum(
-            p.kind == "same_day" for seed_plans in plans.values() for p in seed_plans
-        )
-        state = FEATURE_STATE_BYTES_PER_CH[name]
         results[name] = {
-            "causal": "yes" if causal else "no",
+            "causal": "yes" if causal[name] else "no",
             "seeds": len(SPEC.seeds),
             "sessions": len(splits["sessions"]),
             "pairs": len(splits["pairs"]),
-            **combine_seeds(per_seed, boots, causal),
+            **combine_seeds(per_seed, boots, causal[name]),
             "decoder_macs_per_bin": SPEC.decoder_macs_per_bin,
-            "feature_state_bytes_per_ch": state,
-            "fits": fits,
-            "runtime_s": round(time.time() - t1, 1),
+            "feature_state_bytes_per_ch": FEATURE_STATE_BYTES_PER_CH[name],
+            "fits": sc["fits"],
+            "runtime_s": round(sc["seconds"] + time.time() - t1, 1),
         }
         pair_rows[name] = rows
         failed = guardrail_failures(results[name])
@@ -230,7 +287,8 @@ def main() -> None:
         print("not written: uncommitted changes outside results/; commit first so rows trace to a commit")
     else:
         write_results(results, pair_rows, commit, SPEC, splits)
-        print(f"wrote {SCOREBOARD_CSV.relative_to(REPO)}, {SCOREBOARD_MD.relative_to(REPO)}, {PAIRS_CSV.relative_to(REPO)}")
+        print(f"wrote {SCOREBOARD_CSV.relative_to(REPO)}, {SCOREBOARD_MD.relative_to(REPO)}, "
+              f"{pairs_csv(splits['version']).relative_to(REPO)}")
 
 
 if __name__ == "__main__":

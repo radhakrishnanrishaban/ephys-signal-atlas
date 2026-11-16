@@ -17,7 +17,6 @@ from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
 from bench.spec import SPEC, DecoderSpec
-from bench.splits import SPLITS_PATH
 
 REPO = Path(__file__).resolve().parents[1]
 RESULTS = REPO / "results"
@@ -105,7 +104,7 @@ def render(spec: DecoderSpec = SPEC, today: Optional[date] = None) -> None:
         "",
         f"Spec `{spec.spec_id}`: Ridge on SBP(t…t−{spec.window_bins}) → velocity(t+{spec.lag_bins}), "
         f"first {spec.warmup_bins} bins of each session unscored, same-day R² from "
-        f"{spec.same_day_folds} blocked folds, cross-day pairs from `bench/{SPLITS_PATH.name}`. "
+        f"{spec.same_day_folds} blocked folds, cross-day pairs from `bench/splits_<splits>.json` (the `splits` column). "
         f"CFD = longest gap where the isotonic fit of kept ratio ≥ {spec.kept_threshold:.0%} (`bench/cfd.py`), "
         f"median over seeds {', '.join(map(str, spec.seeds))} (each shifts the same-day fold grid); "
         f"95 % CI from {spec.n_boot:,} session-resampled draws per seed, pooled. "

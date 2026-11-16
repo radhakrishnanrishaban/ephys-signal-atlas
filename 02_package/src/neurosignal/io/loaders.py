@@ -70,6 +70,68 @@ def session_date_from_path(p: Path) -> str:
     return m.group(1) if m else "00000000"
 
 
+LINK_EXTRACTED_DIR = "link"  # under the data dir: SBP + index_velocity per session, from scripts/fetch_link.py
+
+
+def session_key_from_path(p: Union[Path, str]) -> str:
+    """
+    Session key from a LINK file name: the date (20200127), or date + DANDI object id on the 9 dates
+    with two sessions (ses-20211015_obj-1wbkdus → 20211015_obj-1wbkdus). key[:8] is always the date.
+    """
+    m = re.search(r"ses-(\d{8}(?:_obj-[0-9a-z]+)?)_", Path(p).name)
+    if not m:
+        raise ValueError(f"not a LINK session file name: {Path(p).name}")
+    return m.group(1)
+
+
+def list_link_session_paths(data_dir: Optional[Union[Path, str]] = None) -> dict:
+    """
+    {session key: path} for every LINK session on disk, sorted by key: NWB files in the data dir and
+    extracted .npz files in <data dir>/link/. Stops if one session exists in both forms.
+    """
+    data_dir = Path(data_dir or get_data_dir())
+    paths = list(data_dir.glob("*.nwb")) + list((data_dir / LINK_EXTRACTED_DIR).glob("*.npz"))
+    out: dict = {}
+    for p in paths:
+        k = session_key_from_path(p)
+        if k in out:
+            raise ValueError(f"session {k} is on disk twice: {out[k].name} and {p.name}")
+        out[k] = p
+    return dict(sorted(out.items()))
+
+
+LINK_TARGET_STYLES = ("CO", "RD")
+
+
+def load_link_target_style(path: Union[Path, str]) -> str:
+    """
+    Target style of one LINK session, "CO" or "RD", from the NWB identifier (2020-01-27_CO_nwb) or the
+    identifier kept in its extracted .npz (FACTS → "LINK target style"; the codes are not explained in the file).
+    """
+    path = Path(path)
+    if path.suffix == ".npz":
+        with np.load(path) as z:
+            identifier = str(z["identifier"])
+    else:
+        import h5py
+
+        with h5py.File(path, "r") as f:
+            identifier = f["identifier"][()].decode()
+    style = identifier.split("_")[1] if identifier.count("_") >= 2 else ""
+    if style not in LINK_TARGET_STYLES:
+        raise ValueError(f"{path.name}: no target style in identifier {identifier!r}")
+    return style
+
+
+def load_link_session(path: Union[Path, str]) -> tuple:
+    """(sbp, vel) of one LINK session, from its NWB file or its extracted .npz (same arrays, same dtype)."""
+    path = Path(path)
+    if path.suffix == ".npz":
+        with np.load(path) as z:
+            return z["sbp"], z["vel"]
+    return load_link_sbp_velocity(path)
+
+
 def load_link_sbp_velocity(nwb_path: Union[Path, str]) -> tuple:
     """Load SBP and index_velocity from LINK NWB. Returns (sbp, vel); warns if rates differ."""
     with NWBHDF5IO(str(nwb_path), mode="r") as io:
@@ -126,12 +188,13 @@ def load_link_sessions(
     include_tcr: bool = False,
 ) -> tuple:
     """
-    Load SBP and index_velocity for each path. Paths are sorted by session date.
-    Returns (sessions_sbp, sessions_vel, session_dates) with session_dates as YYYYMMDD strings.
+    Load SBP and index_velocity for each path (NWB or extracted .npz). Paths are sorted by session key.
+    Returns (sessions_sbp, sessions_vel, session_dates); each label is the session key: the YYYYMMDD
+    date, with a DANDI object suffix only on the 9 dates that have two sessions.
     If include_tcr=True, returns (sessions_sbp, sessions_tcr, sessions_vel, session_dates).
     """
     paths = [Path(p) for p in paths]
-    paths_sorted = sorted(paths, key=session_date_from_path)
+    paths_sorted = sorted(paths, key=session_key_from_path)
     sessions_sbp: list[np.ndarray] = []
     sessions_tcr: list[np.ndarray] = []
     sessions_vel: list[np.ndarray] = []
@@ -143,10 +206,10 @@ def load_link_sessions(
             sessions_tcr.append(tcr)
             sessions_vel.append(vel)
         else:
-            sbp, vel = load_link_sbp_velocity(p)
+            sbp, vel = load_link_session(p)
             sessions_sbp.append(sbp)
             sessions_vel.append(vel)
-        session_dates.append(session_date_from_path(p))
+        session_dates.append(session_key_from_path(p))
     if include_tcr:
         return sessions_sbp, sessions_tcr, sessions_vel, session_dates
     return sessions_sbp, sessions_vel, session_dates
@@ -169,6 +232,10 @@ __all__ = [
     "get_link_nwb_path",
     "open_nwb",
     "session_date_from_path",
+    "session_key_from_path",
+    "list_link_session_paths",
+    "load_link_session",
+    "load_link_target_style",
     "load_link_sbp_velocity",
     "load_link_sbp_tcr_velocity",
     "load_link_sessions",
