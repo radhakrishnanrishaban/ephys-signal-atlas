@@ -3,7 +3,7 @@
 A Python analysis package for drift-robust feature engineering from chronic extracellular electrophysiology recordings.
 
 ![Kept share of same-day decoder R² against calibration→test gap, raw SBP and causal r_norm (spec v2)](results/kept_ratio_vs_gap_v2.png)
-> **Latest result ([scoreboard](results/SCOREBOARD.md), commit `c480799`, decoder spec v2, splits v1: 74 LINK sessions, 2020-01-27 → 2023-06-22):** a frozen decoder on causal (online) per-session normalization keeps at least half of its held-out same-day R² for **25 days (95 % CI 11–52)**; on raw SBP, for 0 days (CI 0–6). The int32 fixed-point normaliser gives the same 25 days with 12 bytes of state per channel. Beyond a month the median pair keeps nothing. The earlier 52 days (CI 42–82, 30 sessions, `1554f00`) measured the recording period more than the gap: at 8–52 day gaps, pairs calibrated in 2020 keep far more than pairs calibrated in 2021–2023, and on the later pairs alone CFD is 14 days (CI 0–24) ([analysis](results/analyses/cfd_period_v1.md)). Calibration year cannot separate recording period from implant age. Lab notes: [2026-W43](results/notes/2026-W43.md), [2026-W43 (2)](results/notes/2026-W43-2.md), [2026-W45](results/notes/2026-W45.md), [2026-W46](results/notes/2026-W46.md).
+> **Latest result ([scoreboard](results/SCOREBOARD.md), commit `950ef06`, decoder spec v2, splits v2: 304 LINK sessions, 2020-01-27 → 2023-06-22):** a frozen decoder on causal (online) per-session normalization keeps at least half of its held-out same-day R² for **14 days (95 % CI 9–20)**; on raw SBP, for 0 days. The int32 fixed-point normaliser gives the same 14 days with 12 bytes of state per channel. Beyond a month the median pair keeps nothing. On 74 sessions this was 25 days (CI 11–52), and pairs calibrated in 2020 seemed to keep far more than later ones; on all 304 sessions that period effect is inconclusive and near zero within one target style, while pairs calibrated and tested on the same target style keep more than cross-style pairs at every gap (not a pre-registered prediction) ([analysis](results/analyses/cfd_period_v2.md)). Calibration year cannot separate recording period from implant age. Lab notes: [2026-W43](results/notes/2026-W43.md), [2026-W43 (2)](results/notes/2026-W43-2.md), [2026-W45](results/notes/2026-W45.md), [2026-W46](results/notes/2026-W46.md), [2026-W47](results/notes/2026-W47.md).
 
 Every number on the [scoreboard](results/SCOREBOARD.md) is held out, from 3 seeds, with a 95 % CI and compute cost, and comes from one command (`python -m bench.run`, needs the LINK sessions in `01_data/`). Numbers below marked *notebook* are single runs on the same decoder spec as the scoreboard (spec v2: Ridge on SBP at bins t−5…t → finger velocity at bin t, warm-up unscored); their 95 % CIs (session bootstrap) come from [`results/exp003_cis_v2.csv`](results/exp003_cis_v2.csv). On the LINK paper's own split this decoder matches the authors' ridge baseline (index velocity R² 0.252 vs 0.246, paired +0.005, CI −0.001 to +0.008).
 
@@ -11,7 +11,7 @@ Every number on the [scoreboard](results/SCOREBOARD.md) is held out, from 3 seed
 
 This project builds a signal processing and decoding pipeline on the [LINK dataset](https://dandiarchive.org/dandiset/001201) (DANDI:001201): spiking-band power (SBP), threshold-crossing rates (TCR) and finger kinematics from 96 Utah-array channels in macaque motor cortex. The central question is how to engineer features that remain stable for population decoding despite long-term electrode drift and channel dropout.
 
-**Scope:** the headline CFD comes from **74 sessions, 2020-01-27 → 2023-06-22** (splits v1); the notebook results below come from a local subset of **30 sessions, 2020-01-27 → 2021-04-14 (443 days)**. Neither is the full dataset (312 sessions over 1,242 days).
+**Scope:** the headline CFD comes from **304 of the 312 sessions, 2020-01-27 → 2023-06-22** (splits v2; QC dropped 8); the notebook results below come from a local subset of **30 sessions, 2020-01-27 → 2021-04-14 (443 days)**.
 
 The pipeline follows a medallion architecture (Bronze → Silver → Gold):
 
@@ -95,8 +95,8 @@ dandi download DANDI:001201
 
 | | Full LINK dataset | Analysed here |
 | --- | --- | --- |
-| Sessions | 312, recorded on 303 days | 74 (headline CFD, splits v1) · 30 (notebooks) |
-| Span | 1,242 days (~3.5 years) | 2020-01-27 → 2023-06-22 (headline CFD) · 443 days, 2020-01-27 → 2021-04-14 (notebooks) |
+| Sessions | 312, recorded on 303 days | 304 (headline CFD, splits v2) · 30 (notebooks) |
+| Span | 1,242 days (~3.5 years) | 1,242 days, 2020-01-27 → 2023-06-22 (headline CFD) · 443 days, 2020-01-27 → 2021-04-14 (notebooks) |
 | Subject | one rhesus macaque, 96 Utah-array channels in M1 | same |
 | Behaviour | self-paced two-finger task; index-finger flexion velocity (`index_velocity`) is the decoder target | same |
 

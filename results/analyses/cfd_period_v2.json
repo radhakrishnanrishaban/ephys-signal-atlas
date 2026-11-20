@@ -1,0 +1,422 @@
+{
+ "question": "Does calibration-free days measure the gap between sessions, or the recording period?",
+ "commit": "8046449",
+ "dirty": false,
+ "spec": "v2",
+ "run_date": "2026-11-20",
+ "splits": "v2",
+ "bench_commit": "950ef06",
+ "sessions": 304,
+ "pairs": 46047,
+ "settings": {
+  "gap_bins": {
+   "1-7 d": [
+    1,
+    7
+   ],
+   "8-30 d": [
+    8,
+    30
+   ],
+   "31-52 d": [
+    31,
+    52
+   ]
+  },
+  "early": [
+   "2020"
+  ],
+  "late": [
+   "2021",
+   "2022",
+   "2023"
+  ],
+  "min_pairs": 15,
+  "margin": 0.1,
+  "n_boot": 2000,
+  "seeds": [
+   0,
+   1,
+   2
+  ],
+  "kept_threshold": 0.5
+ },
+ "cfd": {
+  "raw_sbp": {
+   "cfd_days": "0",
+   "cfd_ci95_lo": "0",
+   "cfd_ci95_hi": "0",
+   "cfd_seed_min": "0",
+   "cfd_seed_max": "0"
+  },
+  "r_norm_causal": {
+   "cfd_days": "14",
+   "cfd_ci95_lo": "9",
+   "cfd_ci95_hi": "20",
+   "cfd_seed_min": "14",
+   "cfd_seed_max": "14"
+  },
+  "r_norm_causal_q": {
+   "cfd_days": "14",
+   "cfd_ci95_lo": "9",
+   "cfd_ci95_hi": "20",
+   "cfd_seed_min": "14",
+   "cfd_seed_max": "14"
+  }
+ },
+ "by_feature": {
+  "r_norm_causal": {
+   "cells": {
+    "1-7 d": {
+     "2020": {
+      "pairs": 42,
+      "median_kept": 0.8078
+     },
+     "2021": {
+      "pairs": 291,
+      "median_kept": 0.6721
+     },
+     "2022": {
+      "pairs": 283,
+      "median_kept": 0.6047
+     },
+     "2023": {
+      "pairs": 87,
+      "median_kept": 0.6953
+     }
+    },
+    "8-30 d": {
+     "2020": {
+      "pairs": 132,
+      "median_kept": 0.6094
+     },
+     "2021": {
+      "pairs": 913,
+      "median_kept": 0.4563
+     },
+     "2022": {
+      "pairs": 801,
+      "median_kept": 0.4878
+     },
+     "2023": {
+      "pairs": 210,
+      "median_kept": 0.5064
+     }
+    },
+    "31-52 d": {
+     "2020": {
+      "pairs": 119,
+      "median_kept": 0.4395
+     },
+     "2021": {
+      "pairs": 820,
+      "median_kept": 0.3255
+     },
+     "2022": {
+      "pairs": 656,
+      "median_kept": 0.4627
+     },
+     "2023": {
+      "pairs": 181,
+      "median_kept": 0.2619
+     }
+    }
+   },
+   "early_minus_late": {
+    "1-7 d": {
+     "value": 0.1607,
+     "ci95": [
+      -0.0499,
+      0.2255
+     ],
+     "excludes_zero": false,
+     "n": "42 vs 661 pairs × 3 seeds",
+     "reading": "inconclusive"
+    },
+    "8-30 d": {
+     "value": 0.1361,
+     "ci95": [
+      -0.0166,
+      0.3122
+     ],
+     "excludes_zero": false,
+     "n": "132 vs 1924 pairs × 3 seeds",
+     "reading": "inconclusive"
+    },
+    "31-52 d": {
+     "value": 0.0532,
+     "ci95": [
+      -0.2022,
+      0.2841
+     ],
+     "excludes_zero": false,
+     "n": "119 vs 1657 pairs × 3 seeds",
+     "reading": "inconclusive"
+    }
+   },
+   "late_only_cfd": {
+    "cfd_days": 14,
+    "ci95": [
+     8,
+     18
+    ],
+    "seed_points": [
+     14,
+     14,
+     14
+    ],
+    "pairs": 34707
+   },
+   "style": {
+    "same_style_early_minus_late": {
+     "1-7 d": {
+      "value": 0.0515,
+      "ci95": [
+       -0.1518,
+       0.1455
+      ],
+      "excludes_zero": false,
+      "n": "36 vs 391 pairs × 3 seeds",
+      "reading": "inconclusive"
+     },
+     "8-30 d": {
+      "value": 0.0609,
+      "ci95": [
+       -0.0597,
+       0.2103
+      ],
+      "excludes_zero": false,
+      "n": "90 vs 1098 pairs × 3 seeds",
+      "reading": "inconclusive"
+     },
+     "31-52 d": {
+      "value": 0.0117,
+      "ci95": [
+       -0.2262,
+       0.2415
+      ],
+      "excludes_zero": false,
+      "n": "50 vs 950 pairs × 3 seeds",
+      "reading": "inconclusive"
+     }
+    },
+    "same_minus_cross": {
+     "1-7 d": {
+      "value": 0.1773,
+      "ci95": [
+       0.1053,
+       0.2366
+      ],
+      "excludes_zero": true,
+      "n": "427 vs 276 pairs × 3 seeds"
+     },
+     "8-30 d": {
+      "value": 0.1387,
+      "ci95": [
+       0.0793,
+       0.2021
+      ],
+      "excludes_zero": true,
+      "n": "1188 vs 868 pairs × 3 seeds"
+     },
+     "31-52 d": {
+      "value": 0.1194,
+      "ci95": [
+       0.0296,
+       0.2094
+      ],
+      "excludes_zero": true,
+      "n": "1000 vs 776 pairs × 3 seeds"
+     }
+    },
+    "sessions": {
+     "CO": 152,
+     "RD": 152
+    }
+   }
+  },
+  "raw_sbp": {
+   "cells": {
+    "1-7 d": {
+     "2020": {
+      "pairs": 42,
+      "median_kept": 0.0
+     },
+     "2021": {
+      "pairs": 291,
+      "median_kept": 0.0
+     },
+     "2022": {
+      "pairs": 283,
+      "median_kept": 0.0
+     },
+     "2023": {
+      "pairs": 87,
+      "median_kept": 0.0
+     }
+    },
+    "8-30 d": {
+     "2020": {
+      "pairs": 132,
+      "median_kept": 0.0
+     },
+     "2021": {
+      "pairs": 913,
+      "median_kept": 0.0
+     },
+     "2022": {
+      "pairs": 801,
+      "median_kept": 0.0
+     },
+     "2023": {
+      "pairs": 210,
+      "median_kept": 0.0
+     }
+    },
+    "31-52 d": {
+     "2020": {
+      "pairs": 119,
+      "median_kept": 0.0
+     },
+     "2021": {
+      "pairs": 820,
+      "median_kept": 0.0
+     },
+     "2022": {
+      "pairs": 656,
+      "median_kept": 0.0
+     },
+     "2023": {
+      "pairs": 181,
+      "median_kept": 0.0
+     }
+    }
+   },
+   "early_minus_late": {
+    "1-7 d": {
+     "value": 0.0,
+     "ci95": [
+      0.0,
+      0.401
+     ],
+     "excludes_zero": false,
+     "n": "42 vs 661 pairs × 3 seeds",
+     "reading": "inconclusive"
+    },
+    "8-30 d": {
+     "value": 0.0,
+     "ci95": [
+      0.0,
+      0.1858
+     ],
+     "excludes_zero": false,
+     "n": "132 vs 1924 pairs × 3 seeds",
+     "reading": "inconclusive"
+    },
+    "31-52 d": {
+     "value": 0.0,
+     "ci95": [
+      0.0,
+      0.0162
+     ],
+     "excludes_zero": false,
+     "n": "119 vs 1657 pairs × 3 seeds",
+     "reading": "gap"
+    }
+   },
+   "late_only_cfd": {
+    "cfd_days": 0,
+    "ci95": [
+     0,
+     0
+    ],
+    "seed_points": [
+     0,
+     0,
+     0
+    ],
+    "pairs": 34707
+   },
+   "style": {
+    "same_style_early_minus_late": {
+     "1-7 d": {
+      "value": 0.0,
+      "ci95": [
+       0.0,
+       0.4224
+      ],
+      "excludes_zero": false,
+      "n": "36 vs 391 pairs × 3 seeds",
+      "reading": "inconclusive"
+     },
+     "8-30 d": {
+      "value": 0.0,
+      "ci95": [
+       0.0,
+       0.1163
+      ],
+      "excludes_zero": false,
+      "n": "90 vs 1098 pairs × 3 seeds",
+      "reading": "inconclusive"
+     },
+     "31-52 d": {
+      "value": 0.0,
+      "ci95": [
+       0.0,
+       0.2993
+      ],
+      "excludes_zero": false,
+      "n": "50 vs 950 pairs × 3 seeds",
+      "reading": "inconclusive"
+     }
+    },
+    "same_minus_cross": {
+     "1-7 d": {
+      "value": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "excludes_zero": false,
+      "n": "427 vs 276 pairs × 3 seeds"
+     },
+     "8-30 d": {
+      "value": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "excludes_zero": false,
+      "n": "1188 vs 868 pairs × 3 seeds"
+     },
+     "31-52 d": {
+      "value": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "excludes_zero": false,
+      "n": "1000 vs 776 pairs × 3 seeds"
+     }
+    },
+    "sessions": {
+     "CO": 152,
+     "RD": 152
+    }
+   }
+  }
+ },
+ "exp008": {
+  "P5 causal CFD < 52 d, CI width ≤ half of stage 1": true,
+  "P6 period effect at 1-7 d": false,
+  "P7 2021-2023-only CFD < 52 d, CI upper bound < 52 d": true,
+  "P8 period effect within same-style pairs": false,
+  "P9 style contrast < period contrast in every bin": false
+ },
+ "verdict": "inconclusive",
+ "figure": "cfd_period/kept_by_year_v2.png",
+ "cost": {
+  "decoder_fits": 0,
+  "runtime_s": 25.4
+ }
+}
